@@ -18,7 +18,7 @@
     "CHANGELOG_XDG.md"
   ],
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js",
     "dev": "bun run src/index.ts",
     "test": "bun test",
     "show-paths": "bun scripts/show-paths.js",
@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.27.1"
   }
 }

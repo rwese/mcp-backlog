@@ -426,245 +426,257 @@ async function handleBacklogTodoDone(args: any) {
   }
 }
 
-// Tool definitions
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: [
-      {
-        name: "backlog-read",
-        description: "Read-only access to backlog items - list and view backlog work items",
-        inputSchema: {
-          type: "object",
-          properties: {
-            status: {
-              type: "string",
-              enum: ["new", "ready", "review", "done", "reopen", "wontfix"],
-              description: "Status filter for list operation",
-            },
-            priority: {
-              type: "string",
-              enum: ["high", "medium", "low"],
-              description: "Priority filter for list operation",
-            },
-          },
-        },
-      },
-      {
-        name: "backlog-write",
-        description: "Write access to backlog management - create, amend, and list backlog work items",
-        inputSchema: {
-          type: "object",
-          properties: {
-            action: {
-              type: "string",
-              enum: ["create", "list", "amend", "approve", "submit", "reopen", "wontfix"],
-              description: "Operation to perform (default: create)",
-            },
-            topic: {
-              type: "string",
-              description: "Topic name (required for create/amend)",
-            },
-            description: {
-              type: "string",
-              description: "Description (required for create, optional for amend)",
-            },
-            priority: {
-              type: "string",
-              enum: ["high", "medium", "low"],
-              description: "Priority level for create/amend operations (default: medium)",
-            },
-            status: {
-              type: "string",
-              enum: ["new", "ready", "review", "done", "reopen", "wontfix"],
-              description: "Status for amend operation or filter for list operation",
-            },
-          },
-        },
-      },
-      {
-        name: "backlog-done",
-        description: "Mark backlog items as complete with optional summary - done operation and list",
-        inputSchema: {
-          type: "object",
-          properties: {
-            action: {
-              type: "string",
-              enum: ["done", "list"],
-              description: "Operation to perform (default: done)",
-            },
-            topic: {
-              type: "string",
-              description: "Topic name (required for done)",
-            },
-            summary: {
-              type: "string",
-              description: "Optional completion summary describing what was accomplished, lessons learned, or final notes",
-            },
-            status: {
-              type: "string",
-              enum: ["new", "ready", "review", "done", "reopen", "wontfix"],
-              description: "Status filter for list operation",
-            },
-            priority: {
-              type: "string",
-              enum: ["high", "medium", "low"],
-              description: "Priority filter for list operation",
-            },
-          },
-        },
-      },
-      {
-        name: "backlog-todo-read",
-        description: "Read-only access to backlog todos - list and filter todos for a backlog item",
-        inputSchema: {
-          type: "object",
-          properties: {
-            topic: {
-              type: "string",
-              description: "Topic name (required)",
-            },
-            status: {
-              type: "string",
-              enum: ["pending", "in_progress", "completed", "cancelled"],
-              description: "Filter by status",
-            },
-            batch: {
-              type: "string",
-              description: "Filter by batch",
-            },
-          },
-          required: ["topic"],
-        },
-      },
-      {
-        name: "backlog-todo-write",
-        description: "Write access to backlog todos - create and update todos for backlog items",
-        inputSchema: {
-          type: "object",
-          properties: {
-            action: {
-              type: "string",
-              enum: ["create", "update", "list"],
-              description: "Operation to perform",
-            },
-            topic: {
-              type: "string",
-              description: "Topic name (required)",
-            },
-            todoId: {
-              type: "string",
-              description: "Todo ID (required for update)",
-            },
-            content: {
-              type: "string",
-              description: "Todo content",
-            },
-            status: {
-              type: "string",
-              enum: ["pending", "in_progress", "completed", "cancelled"],
-              description: "Todo status",
-            },
-            dependencies: {
-              type: "array",
-              items: { type: "string" },
-              description: "Todo dependencies (array of todo IDs)",
-            },
-            batch: {
-              type: "string",
-              description: "Batch identifier",
-            },
-          },
-          required: ["action", "topic"],
-        },
-      },
-      {
-        name: "backlog-todo-done",
-        description: "Mark backlog todos as complete with dependency validation",
-        inputSchema: {
-          type: "object",
-          properties: {
-            action: {
-              type: "string",
-              enum: ["done", "list"],
-              description: "Operation to perform",
-            },
-            topic: {
-              type: "string",
-              description: "Topic name (required)",
-            },
-            todoId: {
-              type: "string",
-              description: "Todo ID (required for done)",
-            },
-            status: {
-              type: "string",
-              enum: ["pending", "in_progress", "completed", "cancelled"],
-              description: "Filter by status (for list)",
-            },
-            batch: {
-              type: "string",
-              description: "Filter by batch (for list)",
-            },
-          },
-          required: ["action", "topic"],
-        },
-      },
-    ],
-  };
-});
-
-// Tool execution handler
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const context = createContext();
-  
-  try {
-    let result: any;
-    
-    switch (request.params.name) {
-      case "backlog-read":
-        result = await handleBacklogRead(request.params.arguments);
-        break;
-      case "backlog-write":
-        result = await handleBacklogWrite(request.params.arguments, context);
-        break;
-      case "backlog-done":
-        result = await handleBacklogDone(request.params.arguments, context);
-        break;
-      case "backlog-todo-read":
-        result = await handleBacklogTodoRead(request.params.arguments);
-        break;
-      case "backlog-todo-write":
-        result = await handleBacklogTodoWrite(request.params.arguments);
-        break;
-      case "backlog-todo-done":
-        result = await handleBacklogTodoDone(request.params.arguments);
-        break;
-      default:
-        throw new Error(`Unknown tool: ${request.params.name}`);
-    }
-    
-    return {
-      content: [
-        {
-          type: "text",
-          text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
-        },
-      ],
-    };
-  } catch (error: any) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Error: ${error.message}`,
-        },
-      ],
-      isError: true,
-    };
-  }
-});
-
 async function main() {
+  const server = new Server(
+    {
+      name: "mcp-backlog",
+      version: "1.0.0",
+    },
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
+
+  // Tool definitions
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return {
+      tools: [
+        {
+          name: "backlog-read",
+          description: "Read-only access to backlog items - list and view backlog work items",
+          inputSchema: {
+            type: "object",
+            properties: {
+              status: {
+                type: "string",
+                enum: ["new", "ready", "review", "done", "reopen", "wontfix"],
+                description: "Status filter for list operation",
+              },
+              priority: {
+                type: "string",
+                enum: ["high", "medium", "low"],
+                description: "Priority filter for list operation",
+              },
+            },
+          },
+        },
+        {
+          name: "backlog-write",
+          description: "Write access to backlog management - create, amend, and list backlog work items",
+          inputSchema: {
+            type: "object",
+            properties: {
+              action: {
+                type: "string",
+                enum: ["create", "list", "amend", "approve", "submit", "reopen", "wontfix"],
+                description: "Operation to perform (default: create)",
+              },
+              topic: {
+                type: "string",
+                description: "Topic name (required for create/amend)",
+              },
+              description: {
+                type: "string",
+                description: "Description (required for create, optional for amend)",
+              },
+              priority: {
+                type: "string",
+                enum: ["high", "medium", "low"],
+                description: "Priority level for create/amend operations (default: medium)",
+              },
+              status: {
+                type: "string",
+                enum: ["new", "ready", "review", "done", "reopen", "wontfix"],
+                description: "Status for amend operation or filter for list operation",
+              },
+            },
+          },
+        },
+        {
+          name: "backlog-done",
+          description: "Mark backlog items as complete with optional summary - done operation and list",
+          inputSchema: {
+            type: "object",
+            properties: {
+              action: {
+                type: "string",
+                enum: ["done", "list"],
+                description: "Operation to perform (default: done)",
+              },
+              topic: {
+                type: "string",
+                description: "Topic name (required for done)",
+              },
+              summary: {
+                type: "string",
+                description: "Optional completion summary describing what was accomplished, lessons learned, or final notes",
+              },
+              status: {
+                type: "string",
+                enum: ["new", "ready", "review", "done", "reopen", "wontfix"],
+                description: "Status filter for list operation",
+              },
+              priority: {
+                type: "string",
+                enum: ["high", "medium", "low"],
+                description: "Priority filter for list operation",
+              },
+            },
+          },
+        },
+        {
+          name: "backlog-todo-read",
+          description: "Read-only access to backlog todos - list and filter todos for a backlog item",
+          inputSchema: {
+            type: "object",
+            properties: {
+              topic: {
+                type: "string",
+                description: "Topic name (required)",
+              },
+              status: {
+                type: "string",
+                enum: ["pending", "in_progress", "completed", "cancelled"],
+                description: "Filter by status",
+              },
+              batch: {
+                type: "string",
+                description: "Filter by batch",
+              },
+            },
+            required: ["topic"],
+          },
+        },
+        {
+          name: "backlog-todo-write",
+          description: "Write access to backlog todos - create and update todos for backlog items",
+          inputSchema: {
+            type: "object",
+            properties: {
+              action: {
+                type: "string",
+                enum: ["create", "update", "list"],
+                description: "Operation to perform",
+              },
+              topic: {
+                type: "string",
+                description: "Topic name (required)",
+              },
+              todoId: {
+                type: "string",
+                description: "Todo ID (required for update)",
+              },
+              content: {
+                type: "string",
+                description: "Todo content",
+              },
+              status: {
+                type: "string",
+                enum: ["pending", "in_progress", "completed", "cancelled"],
+                description: "Todo status",
+              },
+              dependencies: {
+                type: "array",
+                items: { type: "string" },
+                description: "Todo dependencies (array of todo IDs)",
+              },
+              batch: {
+                type: "string",
+                description: "Batch identifier",
+              },
+            },
+            required: ["action", "topic"],
+          },
+        },
+        {
+          name: "backlog-todo-done",
+          description: "Mark backlog todos as complete with dependency validation",
+          inputSchema: {
+            type: "object",
+            properties: {
+              action: {
+                type: "string",
+                enum: ["done", "list"],
+                description: "Operation to perform",
+              },
+              topic: {
+                type: "string",
+                description: "Topic name (required)",
+              },
+              todoId: {
+                type: "string",
+                description: "Todo ID (required for done)",
+              },
+              status: {
+                type: "string",
+                enum: ["pending", "in_progress", "completed", "cancelled"],
+                description: "Filter by status (for list)",
+              },
+              batch: {
+                type: "string",
+                description: "Filter by batch (for list)",
+              },
+            },
+            required: ["action", "topic"],
+          },
+        },
+      ],
+    };
+  });
+
+  // Tool execution handler
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const context = createContext();
+    
+    try {
+      let result: any;
+      
+      switch (request.params.name) {
+        case "backlog-read":
+          result = await handleBacklogRead(request.params.arguments);
+          break;
+        case "backlog-write":
+          result = await handleBacklogWrite(request.params.arguments, context);
+          break;
+        case "backlog-done":
+          result = await handleBacklogDone(request.params.arguments, context);
+          break;
+        case "backlog-todo-read":
+          result = await handleBacklogTodoRead(request.params.arguments);
+          break;
+        case "backlog-todo-write":
+          result = await handleBacklogTodoWrite(request.params.arguments);
+          break;
+        case "backlog-todo-done":
+          result = await handleBacklogTodoDone(request.params.arguments);
+          break;
+        default:
+          throw new Error(`Unknown tool: ${request.params.name}`);
+      }
+      
+      return {
+        content: [
+          {
+            type: "text",
+            text: typeof result === 'string' ? result : JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error: ${error.message}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  });
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("MCP Backlog server running on stdio");

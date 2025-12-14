@@ -1,6 +1,21 @@
 import { tool } from "@opencode-ai/plugin";
 import { unlinkSync, rmSync } from 'fs';
+import { readFile, writeFile, access } from 'fs/promises';
 import { handleListBacklog } from '../lib/backlog-shared.js';
+
+/**
+ * Check if a file exists using fs/promises
+ * @param path Path to the file
+ * @returns True if file exists
+ */
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 async function handleDone(args, context) {
   const { topic, summary } = args;
@@ -16,21 +31,21 @@ async function handleDone(args, context) {
   const filepath = `.agent/Backlog/${filename}/item.md`;
   const legacyPath = `.agent/Backlog/${filename}.md`;
 
-  // Check both new and legacy paths
-  let actualPath: string | null = null;
-  const newExists = await Bun.file(filepath).exists();
-  const legacyExists = await Bun.file(legacyPath).exists();
-  
-  if (newExists) {
-    actualPath = filepath;
-  } else if (legacyExists) {
-    actualPath = legacyPath;
-  } else {
-    throw new Error(`Backlog item not found for topic: ${topic}`);
-  }
+   // Check both new and legacy paths
+   let actualPath: string | null = null;
+   const newExists = await fileExists(filepath);
+   const legacyExists = await fileExists(legacyPath);
+   
+   if (newExists) {
+     actualPath = filepath;
+   } else if (legacyExists) {
+     actualPath = legacyPath;
+   } else {
+     throw new Error(`Backlog item not found for topic: ${topic}`);
+   }
 
-  // Read and update content
-  let content = await Bun.file(actualPath).text();
+   // Read and update content
+   let content = await readFile(actualPath, 'utf8');
   
   // Determine final status from frontmatter if present
   let finalStatus = 'done';
@@ -62,10 +77,10 @@ async function handleDone(args, context) {
   // Insert before workflow section
   content = content.replace(/\n---\n/, `${completionSection}\n---\n`);
 
-  // Write to COMPLETED_Backlog with appropriate prefix
-  const prefix = finalStatus === 'wontfix' ? 'WONTFIX' : 'DONE';
-  const completedPath = `.agent/COMPLETED_Backlog/${prefix}_${filename}.md`;
-  await Bun.write(completedPath, content);
+   // Write to COMPLETED_Backlog with appropriate prefix
+   const prefix = finalStatus === 'wontfix' ? 'WONTFIX' : 'DONE';
+   const completedPath = `.agent/COMPLETED_Backlog/${prefix}_${filename}.md`;
+   await writeFile(completedPath, content);
 
   // Remove from Backlog - remove entire directory if using new structure, just file if legacy
   if (actualPath === filepath) {

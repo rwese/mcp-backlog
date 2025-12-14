@@ -1,5 +1,20 @@
 import { readdirSync } from 'fs';
+import { readFile, writeFile, access } from 'fs/promises';
 import { getBacklogDir, getCompletedBacklogDir } from './path-resolver.js';
+
+/**
+ * Check if a file exists using fs/promises
+ * @param path Path to the file
+ * @returns True if file exists
+ */
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Parse YAML frontmatter from markdown content
@@ -103,20 +118,20 @@ function serializeValue(key: string, value: any): string {
  * @param updates Properties to update
  */
 export async function updateBacklogFrontmatter(filepath: string, updates: Record<string, any>): Promise<void> {
-  const content = await Bun.file(filepath).text();
-  const parsed = parseFrontmatter(content);
+   const content = await readFile(filepath, 'utf8');
+   const parsed = parseFrontmatter(content);
 
-  if (!parsed) {
-    throw new Error('File does not have frontmatter');
-  }
+   if (!parsed) {
+     throw new Error('File does not have frontmatter');
+   }
 
-  // Merge updates
-  Object.assign(parsed.frontmatter, updates);
+   // Merge updates
+   Object.assign(parsed.frontmatter, updates);
 
-  // Serialize and write
-  const newContent = serializeFrontmatter(parsed.frontmatter, parsed.body);
-  await Bun.write(filepath, newContent);
-}
+   // Serialize and write
+   const newContent = serializeFrontmatter(parsed.frontmatter, parsed.body);
+   await writeFile(filepath, newContent);
+ }
 
 /**
  * Read backlog file with parsed frontmatter
@@ -124,12 +139,12 @@ export async function updateBacklogFrontmatter(filepath: string, updates: Record
  * @returns Parsed frontmatter, body, and format
  */
 export async function readBacklogFile(filepath: string): Promise<{
-  frontmatter: Record<string, any>;
-  body: string;
-  format: 'frontmatter' | 'legacy';
+   frontmatter: Record<string, any>;
+   body: string;
+   format: 'frontmatter' | 'legacy';
 }> {
-  const content = await Bun.file(filepath).text();
-  const parsed = parseFrontmatter(content);
+   const content = await readFile(filepath, 'utf8');
+   const parsed = parseFrontmatter(content);
 
   if (parsed) {
     return {
@@ -192,10 +207,10 @@ async function parseLegacyMetadata(content: string): Promise<Record<string, any>
  * @returns Parsed backlog item metadata
  */
 export async function parseBacklogFile(filepath: string) {
-  const content = await Bun.file(filepath).text();
+   const content = await readFile(filepath, 'utf8');
 
-  // Try parsing frontmatter first
-  const parsed = parseFrontmatter(content);
+   // Try parsing frontmatter first
+   const parsed = parseFrontmatter(content);
 
   if (parsed) {
     // New format with frontmatter
@@ -262,28 +277,27 @@ export async function listBacklogItems(statusFilter?: string, priorityFilter?: s
     try {
       const entries = readdirSync(dir.path);
 
-      for (const entry of entries) {
-        let filepath: string;
-        
-        if (dir.isSubdir) {
-          // New structure: .agent/Backlog/<topic>/item.md
-          const itemPath = `${dir.path}/${entry}/item.md`;
-          const itemExists = await Bun.file(itemPath).exists();
-          if (itemExists) {
-            filepath = itemPath;
-          } else {
-            // Legacy structure: .agent/Backlog/<topic>.md
-            if (entry.endsWith('.md')) {
-              filepath = `${dir.path}/${entry}`;
-            } else {
-              continue;
-            }
-          }
-        } else {
-          // Completed items are always flat .md files
-          if (!entry.endsWith('.md')) continue;
-          filepath = `${dir.path}/${entry}`;
-        }
+       for (const entry of entries) {
+         let filepath: string;
+         
+         if (dir.isSubdir) {
+           // New structure: .agent/Backlog/<topic>/item.md
+           const itemPath = `${dir.path}/${entry}/item.md`;
+           if (await fileExists(itemPath)) {
+             filepath = itemPath;
+           } else {
+             // Legacy structure: .agent/Backlog/<topic>.md
+             if (entry.endsWith('.md')) {
+               filepath = `${dir.path}/${entry}`;
+             } else {
+               continue;
+             }
+           }
+         } else {
+           // Completed items are always flat .md files
+           if (!entry.endsWith('.md')) continue;
+           filepath = `${dir.path}/${entry}`;
+         }
 
         const data = await parseBacklogFile(filepath);
 

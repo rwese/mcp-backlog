@@ -5,8 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
    "bin": {
-     "mcp-backlog": "bun run src/index.ts"
-   },
+      "mcp-backlog": "./dist/index.js"
+    },
   "files": [
     "dist",
     "lib",
@@ -17,13 +17,13 @@
     "CONFIGURATION.md",
     "CHANGELOG_XDG.md"
   ],
-  "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node",
-    "dev": "bun run src/index.ts",
-    "test": "bun test",
-    "show-paths": "bun scripts/show-paths.js",
-    "prepublishOnly": "bun run build"
-  },
+   "scripts": {
+     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js",
+     "dev": "bun run src/index.ts",
+     "test": "bun test",
+     "show-paths": "bun scripts/show-paths.js",
+     "prepublishOnly": "bun run build"
+   },
   "keywords": [
     "mcp",
     "mcp-server",

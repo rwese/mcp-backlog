@@ -2,10 +2,25 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
+   CallToolRequestSchema,
+   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { unlinkSync, rmSync } from 'fs';
+import { readFile, writeFile, access } from 'fs/promises';
+
+/**
+ * Check if a file exists using fs/promises
+ * @param path Path to the file
+ * @returns True if file exists
+ */
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 // Context for tool execution
 function createContext() {
@@ -56,16 +71,16 @@ async function handleCreate(args: any, context: any) {
   const dirpath = `${backlogDir}/${filename}`;
   const filepath = `${dirpath}/item.md`;
 
-  const newExists = await Bun.file(filepath).exists();
-  const legacyPath = `${backlogDir}/${filename}.md`;
-  const legacyExists = await fileExists(legacyPath);
-  
-  if (newExists || legacyExists) {
-    throw new Error(`Backlog item already exists. Use 'amend' to update it.`);
-  }
+   const newExists = await fileExists(filepath);
+   const legacyPath = `${backlogDir}/${filename}.md`;
+   const legacyExists = await fileExists(legacyPath);
+   
+   if (newExists || legacyExists) {
+     throw new Error(`Backlog item already exists. Use 'amend' to update it.`);
+   }
 
-  const content = createBacklogTemplate(topic, description, priority, context);
-  await Bun.write(filepath, content);
+   const content = createBacklogTemplate(topic, description, priority, context);
+   await writeFile(filepath, content);
   return `Created backlog item: ${filepath}`;
 }
 
@@ -82,46 +97,46 @@ async function handleAmend(args: any, context: any) {
   const filepath = `${dirpath}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  let actualPath = filepath;
-  const newExists = await Bun.file(filepath).exists();
-  const legacyExists = await fileExists(legacyPath);
-  
-  if (!newExists && !legacyExists) {
-    throw new Error(`Backlog item not found: ${filepath}`);
-  }
-  
-  if (legacyExists && !newExists) {
-    actualPath = legacyPath;
-  }
+   let actualPath = filepath;
+   const newExists = await fileExists(filepath);
+   const legacyExists = await fileExists(legacyPath);
+   
+   if (!newExists && !legacyExists) {
+     throw new Error(`Backlog item not found: ${filepath}`);
+   }
+   
+   if (legacyExists && !newExists) {
+     actualPath = legacyPath;
+   }
 
-  const currentData = await parseBacklogFile(actualPath);
-  const newStatus = status || currentData.status;
-  const newPriority = priority || currentData.priority;
+   const currentData = await parseBacklogFile(actualPath);
+   const newStatus = status || currentData.status;
+   const newPriority = priority || currentData.priority;
 
-  if (status) {
-    validateStatusTransition(currentData.status, newStatus);
-  }
+   if (status) {
+     validateStatusTransition(currentData.status, newStatus);
+   }
 
-  const nextVersion = getNextVersion(filename);
-  const completedDir = getCompletedBacklogDir();
-  const archivePath = `${completedDir}/${filename}-v${nextVersion}.md`;
-  
-  const { renameSync } = await import('fs');
-  renameSync(actualPath, archivePath);
+   const nextVersion = getNextVersion(filename);
+   const completedDir = getCompletedBacklogDir();
+   const archivePath = `${completedDir}/${filename}-v${nextVersion}.md`;
+   
+   const { renameSync } = await import('fs');
+   renameSync(actualPath, archivePath);
 
-  const newContent = amendBacklogTemplate(
-    topic,
-    description || '(No updated description provided)',
-    newPriority,
-    newStatus,
-    nextVersion + 1,
-    currentData.created,
-    currentData.agent || 'unknown',
-    currentData.session || 'unknown',
-    context
-  );
+   const newContent = amendBacklogTemplate(
+     topic,
+     description || '(No updated description provided)',
+     newPriority,
+     newStatus,
+     nextVersion + 1,
+     currentData.created,
+     currentData.agent || 'unknown',
+     currentData.session || 'unknown',
+     context
+   );
 
-  await writeFile(filepath, newContent);
+   await writeFile(filepath, newContent);
 
   const updates = [];
   if (status) updates.push(`status=${status}`);
@@ -135,96 +150,96 @@ async function handleSubmit(args: any, context: any) {
   const { topic } = args;
   if (!topic) throw new Error("topic is required for submit action");
 
-  const filename = generateBacklogFilename(topic);
-  const backlogDir = getBacklogDir();
-  const filepath = `${backlogDir}/${filename}/item.md`;
-  const legacyPath = `${backlogDir}/${filename}.md`;
+   const filename = generateBacklogFilename(topic);
+   const backlogDir = getBacklogDir();
+   const filepath = `${backlogDir}/${filename}/item.md`;
+   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  const newExists = await Bun.file(filepath).exists();
-  const legacyExists = await fileExists(legacyPath);
-  const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
-  
-  if (!actualPath) throw new Error(`Backlog item not found`);
+   const newExists = await fileExists(filepath);
+   const legacyExists = await fileExists(legacyPath);
+   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
+   
+   if (!actualPath) throw new Error(`Backlog item not found`);
 
-  const currentData = await parseBacklogFile(actualPath);
-  if (currentData.status !== 'new') {
-    throw new Error(`Cannot submit item with status '${currentData.status}'. Item must be in 'new' status to submit.`);
-  }
+   const currentData = await parseBacklogFile(actualPath);
+   if (currentData.status !== 'new') {
+     throw new Error(`Cannot submit item with status '${currentData.status}'. Item must be in 'new' status to submit.`);
+   }
 
-  return await handleAmend({ topic, status: 'ready' }, context);
+   return await handleAmend({ topic, status: 'ready' }, context);
 }
 
 async function handleApprove(args: any, context: any) {
   const { topic } = args;
   if (!topic) throw new Error("topic is required for approve action");
 
-  const filename = generateBacklogFilename(topic);
-  const backlogDir = getBacklogDir();
-  const filepath = `${backlogDir}/${filename}/item.md`;
-  const legacyPath = `${backlogDir}/${filename}.md`;
+   const filename = generateBacklogFilename(topic);
+   const backlogDir = getBacklogDir();
+   const filepath = `${backlogDir}/${filename}/item.md`;
+   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  const newExists = await Bun.file(filepath).exists();
-  const legacyExists = await fileExists(legacyPath);
-  const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
-  
-  if (!actualPath) throw new Error(`Backlog item not found`);
+   const newExists = await fileExists(filepath);
+   const legacyExists = await fileExists(legacyPath);
+   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
+   
+   if (!actualPath) throw new Error(`Backlog item not found`);
 
-  const currentData = await parseBacklogFile(actualPath);
-  if (currentData.status !== 'review') {
-    throw new Error(`Cannot approve item with status '${currentData.status}'. Item must be in 'review' status to approve.`);
-  }
+   const currentData = await parseBacklogFile(actualPath);
+   if (currentData.status !== 'review') {
+     throw new Error(`Cannot approve item with status '${currentData.status}'. Item must be in 'review' status to approve.`);
+   }
 
-  return await handleAmend({ topic, status: 'done' }, context);
+   return await handleAmend({ topic, status: 'done' }, context);
 }
 
 async function handleReopen(args: any, context: any) {
   const { topic, description } = args;
   if (!topic) throw new Error("topic is required for reopen action");
 
-  const filename = generateBacklogFilename(topic);
-  const backlogDir = getBacklogDir();
-  const filepath = `${backlogDir}/${filename}/item.md`;
-  const legacyPath = `${backlogDir}/${filename}.md`;
+   const filename = generateBacklogFilename(topic);
+   const backlogDir = getBacklogDir();
+   const filepath = `${backlogDir}/${filename}/item.md`;
+   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  const newExists = await Bun.file(filepath).exists();
-  const legacyExists = await fileExists(legacyPath);
-  const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
-  
-  if (!actualPath) throw new Error(`Backlog item not found`);
+   const newExists = await fileExists(filepath);
+   const legacyExists = await fileExists(legacyPath);
+   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
+   
+   if (!actualPath) throw new Error(`Backlog item not found`);
 
-  const currentData = await parseBacklogFile(actualPath);
-  if (currentData.status !== 'review' && currentData.status !== 'done') {
-    throw new Error(`Cannot reopen item with status '${currentData.status}'. Item must be in 'review' or 'done' status to reopen.`);
-  }
+   const currentData = await parseBacklogFile(actualPath);
+   if (currentData.status !== 'review' && currentData.status !== 'done') {
+     throw new Error(`Cannot reopen item with status '${currentData.status}'. Item must be in 'review' or 'done' status to reopen.`);
+   }
 
-  if (!description) {
-    throw new Error("description (review notes) is required for reopen action");
-  }
+   if (!description) {
+     throw new Error("description (review notes) is required for reopen action");
+   }
 
-  return await handleAmend({ topic, status: 'reopen', description }, context);
+   return await handleAmend({ topic, status: 'reopen', description }, context);
 }
 
 async function handleWontfix(args: any, context: any) {
   const { topic, description } = args;
   if (!topic) throw new Error("topic is required for wontfix action");
 
-  const filename = generateBacklogFilename(topic);
-  const backlogDir = getBacklogDir();
-  const filepath = `${backlogDir}/${filename}/item.md`;
-  const legacyPath = `${backlogDir}/${filename}.md`;
+   const filename = generateBacklogFilename(topic);
+   const backlogDir = getBacklogDir();
+   const filepath = `${backlogDir}/${filename}/item.md`;
+   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  const newExists = await Bun.file(filepath).exists();
-  const legacyExists = await fileExists(legacyPath);
-  const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
-  
-  if (!actualPath) throw new Error(`Backlog item not found`);
+   const newExists = await fileExists(filepath);
+   const legacyExists = await fileExists(legacyPath);
+   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
+   
+   if (!actualPath) throw new Error(`Backlog item not found`);
 
-  const currentData = await parseBacklogFile(actualPath);
-  if (currentData.status === 'done' || currentData.status === 'wontfix') {
-    throw new Error(`Cannot mark item with status '${currentData.status}' as wontfix. Item is already in a terminal state.`);
-  }
+   const currentData = await parseBacklogFile(actualPath);
+   if (currentData.status === 'done' || currentData.status === 'wontfix') {
+     throw new Error(`Cannot mark item with status '${currentData.status}' as wontfix. Item is already in a terminal state.`);
+   }
 
-  return await handleAmend({ topic, status: 'wontfix', description }, context);
+   return await handleAmend({ topic, status: 'wontfix', description }, context);
 }
 
 // Backlog Done Handler
@@ -256,19 +271,19 @@ async function handleDone(args: any, context: any) {
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  let actualPath: string | null = null;
-  const newExists = await Bun.file(filepath).exists();
-  const legacyExists = await fileExists(legacyPath);
-  
-  if (newExists) {
-    actualPath = filepath;
-  } else if (legacyExists) {
-    actualPath = legacyPath;
-  } else {
-    throw new Error(`Backlog item not found for topic: ${topic}`);
-  }
+   let actualPath: string | null = null;
+   const newExists = await fileExists(filepath);
+   const legacyExists = await fileExists(legacyPath);
+   
+   if (newExists) {
+     actualPath = filepath;
+   } else if (legacyExists) {
+     actualPath = legacyPath;
+   } else {
+     throw new Error(`Backlog item not found for topic: ${topic}`);
+   }
 
-  let content = await Bun.file(actualPath).text();
+   let content = await readFile(actualPath, 'utf8');
   
   let finalStatus = 'done';
   if (content.startsWith('---\n')) {
@@ -293,10 +308,10 @@ async function handleDone(args: any, context: any) {
 
   content = content.replace(/\n---\n/, `${completionSection}\n---\n`);
 
-  const prefix = finalStatus === 'wontfix' ? 'WONTFIX' : 'DONE';
-  const completedDir = getCompletedBacklogDir();
-  const completedPath = `${completedDir}/${prefix}_${filename}.md`;
-  await writeFile(completedPath, content);
+   const prefix = finalStatus === 'wontfix' ? 'WONTFIX' : 'DONE';
+   const completedDir = getCompletedBacklogDir();
+   const completedPath = `${completedDir}/${prefix}_${filename}.md`;
+   await writeFile(completedPath, content, 'utf8');
 
   if (actualPath === filepath) {
     const dirpath = `${backlogDir}/${filename}`;

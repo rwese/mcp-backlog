@@ -4,9 +4,9 @@
   "description": "MCP server for managing backlog items and todos",
   "type": "module",
   "main": "dist/index.js",
-  "bin": {
-    "mcp-backlog": "./dist/index.js"
-  },
+   "bin": {
+     "mcp-backlog": "bun run src/index.ts"
+   },
   "files": [
     "dist",
     "lib",
@@ -18,7 +18,7 @@
     "CHANGELOG_XDG.md"
   ],
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js",
+    "build": "bun build src/index.ts --outdir dist --target node",
     "dev": "bun run src/index.ts",
     "test": "bun test",
     "show-paths": "bun scripts/show-paths.js",

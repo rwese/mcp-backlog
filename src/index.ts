@@ -6,16 +6,6 @@ import {
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { unlinkSync, rmSync } from 'fs';
-import { readFile, writeFile, access } from 'fs/promises';
-
-async function fileExists(filepath: string): Promise<boolean> {
-  try {
-    await access(filepath);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 // Context for tool execution
 function createContext() {
@@ -66,7 +56,7 @@ async function handleCreate(args: any, context: any) {
   const dirpath = `${backlogDir}/${filename}`;
   const filepath = `${dirpath}/item.md`;
 
-  const newExists = await fileExists(filepath);
+  const newExists = await Bun.file(filepath).exists();
   const legacyPath = `${backlogDir}/${filename}.md`;
   const legacyExists = await fileExists(legacyPath);
   
@@ -75,7 +65,7 @@ async function handleCreate(args: any, context: any) {
   }
 
   const content = createBacklogTemplate(topic, description, priority, context);
-  await writeFile(filepath, content);
+  await Bun.write(filepath, content);
   return `Created backlog item: ${filepath}`;
 }
 
@@ -93,7 +83,7 @@ async function handleAmend(args: any, context: any) {
   const legacyPath = `${backlogDir}/${filename}.md`;
 
   let actualPath = filepath;
-  const newExists = await fileExists(filepath);
+  const newExists = await Bun.file(filepath).exists();
   const legacyExists = await fileExists(legacyPath);
   
   if (!newExists && !legacyExists) {
@@ -150,7 +140,7 @@ async function handleSubmit(args: any, context: any) {
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  const newExists = await fileExists(filepath);
+  const newExists = await Bun.file(filepath).exists();
   const legacyExists = await fileExists(legacyPath);
   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
   
@@ -173,7 +163,7 @@ async function handleApprove(args: any, context: any) {
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  const newExists = await fileExists(filepath);
+  const newExists = await Bun.file(filepath).exists();
   const legacyExists = await fileExists(legacyPath);
   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
   
@@ -196,7 +186,7 @@ async function handleReopen(args: any, context: any) {
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  const newExists = await fileExists(filepath);
+  const newExists = await Bun.file(filepath).exists();
   const legacyExists = await fileExists(legacyPath);
   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
   
@@ -223,7 +213,7 @@ async function handleWontfix(args: any, context: any) {
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
 
-  const newExists = await fileExists(filepath);
+  const newExists = await Bun.file(filepath).exists();
   const legacyExists = await fileExists(legacyPath);
   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
   
@@ -267,7 +257,7 @@ async function handleDone(args: any, context: any) {
   const legacyPath = `${backlogDir}/${filename}.md`;
 
   let actualPath: string | null = null;
-  const newExists = await fileExists(filepath);
+  const newExists = await Bun.file(filepath).exists();
   const legacyExists = await fileExists(legacyPath);
   
   if (newExists) {
@@ -278,7 +268,7 @@ async function handleDone(args: any, context: any) {
     throw new Error(`Backlog item not found for topic: ${topic}`);
   }
 
-  let content = await readFile(actualPath, 'utf8');
+  let content = await Bun.file(actualPath).text();
   
   let finalStatus = 'done';
   if (content.startsWith('---\n')) {

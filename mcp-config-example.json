@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "node",
+      "args": ["/Users/YOUR_USERNAME/Repos/mcp-backlog/dist/index.js"],
+      "description": "Backlog and todo management server"
+    }
+  }
+}

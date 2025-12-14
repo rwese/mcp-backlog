@@ -1,0 +1,30 @@
+{
+  "name": "mcp-backlog",
+  "version": "1.0.0",
+  "description": "MCP server for managing backlog items and todos",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-backlog": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "dev": "bun run src/index.ts",
+    "test": "bun test"
+  },
+  "keywords": [
+    "mcp",
+    "backlog",
+    "todo",
+    "task-management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^20.0.0"
+  }
+}

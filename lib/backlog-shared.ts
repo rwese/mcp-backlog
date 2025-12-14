@@ -1,4 +1,5 @@
 import { readdirSync } from 'fs';
+import { getBacklogDir, getCompletedBacklogDir } from './path-resolver.js';
 
 /**
  * Parse YAML frontmatter from markdown content
@@ -253,8 +254,8 @@ export async function parseBacklogFile(filepath: string) {
 export async function listBacklogItems(statusFilter?: string, priorityFilter?: string) {
   const items = [];
   const dirs = [
-    { path: '.agent/Backlog', isSubdir: true },
-    { path: '.agent/COMPLETED_Backlog', isSubdir: false }
+    { path: getBacklogDir(), isSubdir: true },
+    { path: getCompletedBacklogDir(), isSubdir: false }
   ];
 
   for (const dir of dirs) {
@@ -307,7 +308,7 @@ export async function listBacklogItems(statusFilter?: string, priorityFilter?: s
  */
 export function getNextVersion(filename: string): number {
   try {
-    const files = readdirSync('.agent/COMPLETED_Backlog');
+    const files = readdirSync(getCompletedBacklogDir());
     const versions = files
       .filter(f => f.startsWith(filename + '-v') && f.endsWith('.md'))
       .map(f => {

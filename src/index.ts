@@ -7,6 +7,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { unlinkSync, rmSync } from 'fs';
 import { handleListBacklog } from '../lib/backlog-shared.js';
+import { getBacklogDir, getCompletedBacklogDir } from '../lib/path-resolver.js';
 import {
   parseBacklogFile,
   getNextVersion,
@@ -79,11 +80,12 @@ async function handleCreate(args: any, context: any) {
   }
 
   const filename = generateBacklogFilename(topic);
-  const dirpath = `.agent/Backlog/${filename}`;
+  const backlogDir = getBacklogDir();
+  const dirpath = `${backlogDir}/${filename}`;
   const filepath = `${dirpath}/item.md`;
 
   const newExists = await Bun.file(filepath).exists();
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const legacyPath = `${backlogDir}/${filename}.md`;
   const legacyExists = await Bun.file(legacyPath).exists();
   
   if (newExists || legacyExists) {
@@ -103,9 +105,10 @@ async function handleAmend(args: any, context: any) {
   }
 
   const filename = generateBacklogFilename(topic);
-  const dirpath = `.agent/Backlog/${filename}`;
+  const backlogDir = getBacklogDir();
+  const dirpath = `${backlogDir}/${filename}`;
   const filepath = `${dirpath}/item.md`;
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const legacyPath = `${backlogDir}/${filename}.md`;
 
   let actualPath = filepath;
   const newExists = await Bun.file(filepath).exists();
@@ -128,7 +131,8 @@ async function handleAmend(args: any, context: any) {
   }
 
   const nextVersion = getNextVersion(filename);
-  const archivePath = `.agent/COMPLETED_Backlog/${filename}-v${nextVersion}.md`;
+  const completedDir = getCompletedBacklogDir();
+  const archivePath = `${completedDir}/${filename}-v${nextVersion}.md`;
   
   const { renameSync } = await import('fs');
   renameSync(actualPath, archivePath);
@@ -160,8 +164,9 @@ async function handleSubmit(args: any, context: any) {
   if (!topic) throw new Error("topic is required for submit action");
 
   const filename = generateBacklogFilename(topic);
-  const filepath = `.agent/Backlog/${filename}/item.md`;
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const backlogDir = getBacklogDir();
+  const filepath = `${backlogDir}/${filename}/item.md`;
+  const legacyPath = `${backlogDir}/${filename}.md`;
 
   const newExists = await Bun.file(filepath).exists();
   const legacyExists = await Bun.file(legacyPath).exists();
@@ -182,8 +187,9 @@ async function handleApprove(args: any, context: any) {
   if (!topic) throw new Error("topic is required for approve action");
 
   const filename = generateBacklogFilename(topic);
-  const filepath = `.agent/Backlog/${filename}/item.md`;
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const backlogDir = getBacklogDir();
+  const filepath = `${backlogDir}/${filename}/item.md`;
+  const legacyPath = `${backlogDir}/${filename}.md`;
 
   const newExists = await Bun.file(filepath).exists();
   const legacyExists = await Bun.file(legacyPath).exists();
@@ -204,8 +210,9 @@ async function handleReopen(args: any, context: any) {
   if (!topic) throw new Error("topic is required for reopen action");
 
   const filename = generateBacklogFilename(topic);
-  const filepath = `.agent/Backlog/${filename}/item.md`;
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const backlogDir = getBacklogDir();
+  const filepath = `${backlogDir}/${filename}/item.md`;
+  const legacyPath = `${backlogDir}/${filename}.md`;
 
   const newExists = await Bun.file(filepath).exists();
   const legacyExists = await Bun.file(legacyPath).exists();
@@ -230,8 +237,9 @@ async function handleWontfix(args: any, context: any) {
   if (!topic) throw new Error("topic is required for wontfix action");
 
   const filename = generateBacklogFilename(topic);
-  const filepath = `.agent/Backlog/${filename}/item.md`;
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const backlogDir = getBacklogDir();
+  const filepath = `${backlogDir}/${filename}/item.md`;
+  const legacyPath = `${backlogDir}/${filename}.md`;
 
   const newExists = await Bun.file(filepath).exists();
   const legacyExists = await Bun.file(legacyPath).exists();
@@ -272,8 +280,9 @@ async function handleDone(args: any, context: any) {
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
-  const filepath = `.agent/Backlog/${filename}/item.md`;
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const backlogDir = getBacklogDir();
+  const filepath = `${backlogDir}/${filename}/item.md`;
+  const legacyPath = `${backlogDir}/${filename}.md`;
 
   let actualPath: string | null = null;
   const newExists = await Bun.file(filepath).exists();
@@ -313,11 +322,12 @@ async function handleDone(args: any, context: any) {
   content = content.replace(/\n---\n/, `${completionSection}\n---\n`);
 
   const prefix = finalStatus === 'wontfix' ? 'WONTFIX' : 'DONE';
-  const completedPath = `.agent/COMPLETED_Backlog/${prefix}_${filename}.md`;
+  const completedDir = getCompletedBacklogDir();
+  const completedPath = `${completedDir}/${prefix}_${filename}.md`;
   await Bun.write(completedPath, content);
 
   if (actualPath === filepath) {
-    const dirpath = `.agent/Backlog/${filename}`;
+    const dirpath = `${backlogDir}/${filename}`;
     rmSync(dirpath, { recursive: true, force: true });
   } else {
     unlinkSync(actualPath);

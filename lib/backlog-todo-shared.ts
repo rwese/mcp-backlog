@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { generateBacklogFilename } from './backlog-shared.js';
+import { getBacklogDir } from './path-resolver.js';
 
 export interface Todo {
   id: string;
@@ -24,17 +25,20 @@ export interface Context {
 
 export function getBacklogItemPath(topic: string): string {
   const normalized = generateBacklogFilename(topic);
-  return `.agent/Backlog/${normalized}/item.md`;
+  const backlogDir = getBacklogDir();
+  return `${backlogDir}/${normalized}/item.md`;
 }
 
 export function getTodosFilePath(topic: string): string {
   const normalized = generateBacklogFilename(topic);
-  return `.agent/Backlog/${normalized}/todos.json`;
+  const backlogDir = getBacklogDir();
+  return `${backlogDir}/${normalized}/todos.json`;
 }
 
 export function ensureTodosDirectory(topic: string): void {
   const normalized = generateBacklogFilename(topic);
-  const dirPath = `.agent/Backlog/${normalized}`;
+  const backlogDir = getBacklogDir();
+  const dirPath = `${backlogDir}/${normalized}`;
   mkdirSync(dirPath, { recursive: true });
 }
 

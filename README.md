@@ -150,18 +150,72 @@ Mark todos as complete with dependency validation.
 
 ## Directory Structure
 
-The server creates and manages files in the `.agent/` directory:
+### Default Location (XDG-compliant)
+
+By default, the server stores backlog data in XDG-compliant directories with multi-project isolation:
 
 ```
-.agent/
-├── Backlog/
-│   └── <topic-name>/
-│       ├── item.md       # Backlog item details
-│       └── todos.json    # Associated todos
-└── COMPLETED_Backlog/
-    ├── DONE_<topic>-v1.md
-    └── WONTFIX_<topic>.md
+~/.local/share/mcp-backlog/
+└── projects/
+    └── <project-name>/
+        ├── Backlog/
+        │   └── <topic-name>/
+        │       ├── item.md       # Backlog item details
+        │       └── todos.json    # Associated todos
+        └── COMPLETED_Backlog/
+            ├── DONE_<topic>-v1.md
+            └── WONTFIX_<topic>.md
 ```
+
+### Multi-Project Support
+
+Each project gets its own isolated directory:
+- **Git repositories**: Uses the repository root directory name as project identifier
+- **Non-git projects**: Uses directory name + hash for uniqueness
+
+This allows you to use the same MCP server across multiple projects without conflicts.
+
+### Legacy Support
+
+For backward compatibility, if you have an existing `.agent/` directory in your current working directory, it will be used instead of the XDG directory.
+
+### Custom Locations
+
+You can override the default location using environment variables:
+
+**Option 1: Set a custom backlog directory**
+```bash
+export MCP_BACKLOG_DIR="/path/to/your/backlog"
+```
+
+**Option 2: Set XDG_DATA_HOME (affects all XDG-compliant apps)**
+```bash
+export XDG_DATA_HOME="/path/to/data"
+# Backlog will be stored at: /path/to/data/mcp-backlog/
+```
+
+Add these to your MCP client configuration:
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "mcp-backlog",
+      "env": {
+        "MCP_BACKLOG_DIR": "/custom/path"
+      }
+    }
+  }
+}
+```
+
+## Configuration
+
+See [CONFIGURATION.md](./CONFIGURATION.md) for detailed information about:
+- XDG Base Directory support
+- Multi-project isolation
+- Environment variables
+- Custom storage locations
+- Platform-specific defaults
 
 ## Development
 

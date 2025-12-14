@@ -1,6 +1,6 @@
 {
   "name": "@rwese/mcp-backlog",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for managing backlog items and todos",
   "type": "module",
   "main": "dist/index.js",
@@ -10,14 +10,18 @@
   "files": [
     "dist",
     "lib",
+    "scripts",
     "README.md",
     "LICENSE",
-    "QUICKSTART.md"
+    "QUICKSTART.md",
+    "CONFIGURATION.md",
+    "CHANGELOG_XDG.md"
   ],
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target node",
     "dev": "bun run src/index.ts",
     "test": "bun test",
+    "show-paths": "bun scripts/show-paths.js",
     "prepublishOnly": "bun run build"
   },
   "keywords": [

@@ -1,5 +1,5 @@
 {
-  "name": "mcp-backlog",
+  "name": "@rwese/mcp-backlog",
   "version": "1.0.0",
   "description": "MCP server for managing backlog items and todos",
   "type": "module",
@@ -7,19 +7,45 @@
   "bin": {
     "mcp-backlog": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "lib",
+    "README.md",
+    "LICENSE",
+    "QUICKSTART.md"
+  ],
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target node",
     "dev": "bun run src/index.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "mcp",
+    "mcp-server",
+    "model-context-protocol",
     "backlog",
     "todo",
-    "task-management"
+    "task-management",
+    "project-management",
+    "workflow"
   ],
-  "author": "",
+  "author": "rwese",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rwese/mcp-backlog.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rwese/mcp-backlog/issues"
+  },
+  "homepage": "https://github.com/rwese/mcp-backlog#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
   },

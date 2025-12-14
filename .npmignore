@@ -1,0 +1,27 @@
+# Source files (we ship dist/ only)
+src/
+tests/
+*.test.js
+*.test.ts
+
+# Development files
+.git/
+.gitignore
+tsconfig.json
+bun.lock
+test-server.sh
+
+# Agent directories
+.agent/
+.agent-test/
+
+# Documentation for development
+CONTRIBUTING.md
+mcp-config-example.json
+
+# OS files
+.DS_Store
+*.log
+
+# Build artifacts that shouldn't be in npm
+node_modules/

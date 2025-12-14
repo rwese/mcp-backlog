@@ -13,29 +13,63 @@ A Model Context Protocol (MCP) server for managing backlog items and todos. This
 
 ## Installation
 
+### Via NPM (Recommended)
+
 ```bash
-cd ~/Repos/mcp-backlog
+npm install -g @rwese/mcp-backlog
+```
+
+Or with NPX (no installation):
+
+```bash
+npx @rwese/mcp-backlog
+```
+
+### From Source
+
+```bash
+git clone https://github.com/rwese/mcp-backlog.git
+cd mcp-backlog
 bun install
+bun run build
 ```
 
 ## Usage
-
-### As a standalone MCP server
-
-```bash
-bun run dev
-```
 
 ### In your MCP client configuration
 
 Add to your MCP client's configuration file:
 
+**Using NPM global install:**
 ```json
 {
   "mcpServers": {
     "backlog": {
-      "command": "bun",
-      "args": ["run", "/Users/YOUR_USERNAME/Repos/mcp-backlog/src/index.ts"]
+      "command": "mcp-backlog"
+    }
+  }
+}
+```
+
+**Using NPX:**
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "npx",
+      "args": ["@rwese/mcp-backlog"]
+    }
+  }
+}
+```
+
+**Using local build:**
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "node",
+      "args": ["/path/to/mcp-backlog/dist/index.js"]
     }
   }
 }

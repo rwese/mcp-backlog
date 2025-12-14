@@ -1,5 +1,15 @@
 import { readdirSync } from 'fs';
+import { readFile, writeFile, access } from 'fs/promises';
 import { getBacklogDir, getCompletedBacklogDir } from './path-resolver.js';
+
+async function fileExists(filepath: string): Promise<boolean> {
+  try {
+    await access(filepath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Parse YAML frontmatter from markdown content
@@ -103,7 +113,7 @@ function serializeValue(key: string, value: any): string {
  * @param updates Properties to update
  */
 export async function updateBacklogFrontmatter(filepath: string, updates: Record<string, any>): Promise<void> {
-  const content = await Bun.file(filepath).text();
+  const content = await readFile(filepath, 'utf8');
   const parsed = parseFrontmatter(content);
 
   if (!parsed) {
@@ -115,7 +125,7 @@ export async function updateBacklogFrontmatter(filepath: string, updates: Record
 
   // Serialize and write
   const newContent = serializeFrontmatter(parsed.frontmatter, parsed.body);
-  await Bun.write(filepath, newContent);
+  await writeFile(filepath, newContent);
 }
 
 /**
@@ -128,7 +138,7 @@ export async function readBacklogFile(filepath: string): Promise<{
   body: string;
   format: 'frontmatter' | 'legacy';
 }> {
-  const content = await Bun.file(filepath).text();
+  const content = await readFile(filepath, 'utf8');
   const parsed = parseFrontmatter(content);
 
   if (parsed) {
@@ -192,7 +202,7 @@ async function parseLegacyMetadata(content: string): Promise<Record<string, any>
  * @returns Parsed backlog item metadata
  */
 export async function parseBacklogFile(filepath: string) {
-  const content = await Bun.file(filepath).text();
+  const content = await readFile(filepath, 'utf8');
 
   // Try parsing frontmatter first
   const parsed = parseFrontmatter(content);
@@ -268,7 +278,7 @@ export async function listBacklogItems(statusFilter?: string, priorityFilter?: s
         if (dir.isSubdir) {
           // New structure: .agent/Backlog/<topic>/item.md
           const itemPath = `${dir.path}/${entry}/item.md`;
-          const itemExists = await Bun.file(itemPath).exists();
+          const itemExists = await fileExists(itemPath);
           if (itemExists) {
             filepath = itemPath;
           } else {

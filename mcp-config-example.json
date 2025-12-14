@@ -1,9 +1,30 @@
 {
   "mcpServers": {
     "backlog": {
-      "command": "node",
-      "args": ["/Users/YOUR_USERNAME/Repos/mcp-backlog/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@rwese/mcp-backlog"],
       "description": "Backlog and todo management server"
     }
   }
 }
+
+// Alternative configurations:
+
+// Using global npm install:
+// {
+//   "mcpServers": {
+//     "backlog": {
+//       "command": "mcp-backlog"
+//     }
+//   }
+// }
+
+// Using local build:
+// {
+//   "mcpServers": {
+//     "backlog": {
+//       "command": "node",
+//       "args": ["/Users/YOUR_USERNAME/Repos/mcp-backlog/dist/index.js"]
+//     }
+//   }
+// }

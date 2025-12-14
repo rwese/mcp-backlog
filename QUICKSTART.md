@@ -1,14 +1,10 @@
 # Quick Start Guide
 
-## Installation
+## Zero-Install Setup (Recommended)
 
-```bash
-cd ~/Repos/mcp-backlog
-bun install
-bun run build
-```
+No installation needed! Just configure your MCP client to use `npx`.
 
-## Configure Your MCP Client
+### Configure Your MCP Client
 
 Add this to your MCP client configuration (e.g., Claude Desktop, Cline, etc.):
 
@@ -16,22 +12,75 @@ Add this to your MCP client configuration (e.g., Claude Desktop, Cline, etc.):
 {
   "mcpServers": {
     "backlog": {
-      "command": "node",
-      "args": ["/Users/YOUR_USERNAME/Repos/mcp-backlog/dist/index.js"]
+      "command": "npx",
+      "args": ["-y", "@rwese/mcp-backlog"]
     }
   }
 }
 ```
 
-**Note:** Replace `YOUR_USERNAME` with your actual username.
+**Benefits:**
+- ✅ No installation required
+- ✅ Always uses latest version
+- ✅ Works across any machine
+- ✅ No path configuration needed
 
-### For Claude Desktop
+### Configuration File Locations
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Claude Desktop (macOS):**
+```
+~/Library/Application Support/Claude/claude_desktop_config.json
+```
 
-### For Cline (VSCode)
+**Claude Desktop (Windows):**
+```
+%APPDATA%\Claude\claude_desktop_config.json
+```
 
+**Cline (VSCode):**
 Edit your MCP settings in VSCode settings.
+
+## Alternative: Global Install
+
+If you prefer a global installation:
+
+```bash
+npm install -g @rwese/mcp-backlog
+```
+
+Then configure:
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "mcp-backlog"
+    }
+  }
+}
+```
+
+## Alternative: Local Development
+
+For development or customization:
+
+```bash
+git clone https://github.com/rwese/mcp-backlog.git
+cd mcp-backlog
+bun install
+bun run build
+```
+
+Then configure:
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-backlog/dist/index.js"]
+    }
+  }
+}
+```
 
 ## Usage Examples
 

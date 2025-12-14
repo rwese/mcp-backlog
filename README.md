@@ -13,16 +13,36 @@ A Model Context Protocol (MCP) server for managing backlog items and todos. This
 
 ## Installation
 
-### Via NPM (Recommended)
+### Quick Start (Zero Install)
 
+**Using NPX (Node.js):**
 ```bash
-npm install -g @rwese/mcp-backlog
+npx -y github:rwese/mcp-backlog
 ```
 
-Or with NPX (no installation):
-
+**Using Bunx (Bun - Faster):**
 ```bash
-npx @rwese/mcp-backlog
+bunx --bun github:rwese/mcp-backlog
+```
+
+### Global Installation
+
+**With Bun (Recommended):**
+```bash
+# From GitHub (latest)
+bun add -g github:rwese/mcp-backlog
+
+# From NPM (when published)
+bun add -g @rwese/mcp-backlog
+```
+
+**With NPM:**
+```bash
+# From GitHub
+npm install -g github:rwese/mcp-backlog
+
+# From NPM (when published)
+npm install -g @rwese/mcp-backlog
 ```
 
 ### From Source
@@ -30,8 +50,8 @@ npx @rwese/mcp-backlog
 ```bash
 git clone https://github.com/rwese/mcp-backlog.git
 cd mcp-backlog
-bun install
-bun run build
+bun install  # or npm install
+bun run build  # or npm run build
 ```
 
 ## Usage
@@ -40,7 +60,31 @@ bun run build
 
 Add to your MCP client's configuration file:
 
-**Using NPM global install:**
+**Using NPX from GitHub (Recommended):**
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "npx",
+      "args": ["-y", "github:rwese/mcp-backlog"]
+    }
+  }
+}
+```
+
+**Using Bunx (Faster):**
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "bunx",
+      "args": ["--bun", "github:rwese/mcp-backlog"]
+    }
+  }
+}
+```
+
+**Using global install:**
 ```json
 {
   "mcpServers": {

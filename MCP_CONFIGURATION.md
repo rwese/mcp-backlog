@@ -2,9 +2,42 @@
 
 This guide shows how to configure `mcp-backlog` in various MCP clients.
 
-## Recommended: NPX (Zero Install)
+## Recommended: NPX from GitHub (Zero Install)
 
-The easiest way to use mcp-backlog across any machine without installation.
+The easiest way to use mcp-backlog across any machine without installation. Uses the latest code directly from GitHub.
+
+### Configuration
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "npx",
+      "args": ["-y", "github:rwese/mcp-backlog"]
+    }
+  }
+}
+```
+
+**Explanation:**
+- `npx` - Node.js package executor
+- `-y` - Auto-confirm installation (no prompts)
+- `github:rwese/mcp-backlog` - Install from GitHub repository
+
+**Pros:**
+- ✅ No installation needed
+- ✅ Works on any machine with Node.js
+- ✅ Always uses latest GitHub code
+- ✅ No PATH configuration
+- ✅ Easy to share configuration
+
+**Cons:**
+- ⚠️ First run downloads package (~500KB)
+- ⚠️ Requires internet connection for first run
+
+## Option 2: NPX from NPM (Published Package)
+
+Once the package is published to npm, you can use the npm registry:
 
 ### Configuration
 
@@ -35,14 +68,85 @@ The easiest way to use mcp-backlog across any machine without installation.
 - ⚠️ First run downloads package (~500KB)
 - ⚠️ Requires internet connection for first run
 
-## Option 2: Global NPM Install
+## Option 3: Bunx from GitHub (Zero Install)
 
-Install once, use everywhere on the machine.
+If you have Bun installed, you can use bunx for even faster execution:
+
+### Configuration
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "bunx",
+      "args": ["--bun", "github:rwese/mcp-backlog"]
+    }
+  }
+}
+```
+
+**Explanation:**
+- `bunx` - Bun's package executor (like npx but faster)
+- `--bun` - Use Bun runtime instead of Node.js
+- `github:rwese/mcp-backlog` - Install from GitHub repository
+
+**Pros:**
+- ✅ No installation needed
+- ✅ Faster startup than npx
+- ✅ Always uses latest GitHub code
+- ✅ Native Bun performance
+
+**Cons:**
+- ⚠️ Requires Bun to be installed
+- ⚠️ First run downloads package
+
+## Option 4: Global Install with Bun
+
+Install once using Bun's package manager:
 
 ### Installation
 
 ```bash
+# Install from GitHub
+bun add -g github:rwese/mcp-backlog
+
+# Or from npm (when published)
+bun add -g @rwese/mcp-backlog
+```
+
+### Configuration
+
+```json
+{
+  "mcpServers": {
+    "backlog": {
+      "command": "mcp-backlog"
+    }
+  }
+}
+```
+
+**Pros:**
+- ✅ Faster installation than npm
+- ✅ Works offline after install
+- ✅ Version pinned
+
+**Cons:**
+- ⚠️ Requires Bun to be installed
+- ⚠️ Need to manually update (`bun update -g @rwese/mcp-backlog`)
+
+## Option 5: Global NPM Install
+
+Install once with npm, use everywhere on the machine.
+
+### Installation
+
+```bash
+# Install from npm (when published)
 npm install -g @rwese/mcp-backlog
+
+# Or install from GitHub
+npm install -g github:rwese/mcp-backlog
 ```
 
 ### Configuration
@@ -66,7 +170,7 @@ npm install -g @rwese/mcp-backlog
 - ⚠️ Requires installation on each machine
 - ⚠️ Need to manually update (`npm update -g @rwese/mcp-backlog`)
 
-## Option 3: Local Development Build
+## Option 6: Local Development Build
 
 For development or customization.
 
@@ -173,9 +277,9 @@ After configuring:
 ### "Package not found: @rwese/mcp-backlog"
 
 **Solution:** 
-1. Package may not be published yet to NPM
-2. Use local development setup instead
-3. Or wait for NPM publication
+1. If using npm registry, package may not be published yet
+2. Use GitHub instead: `npx -y github:rwese/mcp-backlog`
+3. Or use local development setup
 
 ### "Permission denied"
 

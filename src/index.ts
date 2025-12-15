@@ -5,8 +5,24 @@ import {
    CallToolRequestSchema,
    ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { unlinkSync, rmSync } from 'fs';
+import { unlinkSync, rmSync, mkdirSync } from 'fs';
 import { readFile, writeFile, access } from 'fs/promises';
+import {
+  handleListBacklog,
+  parseBacklogFile,
+  generateBacklogFilename,
+  createBacklogTemplate,
+  amendBacklogTemplate,
+  getNextVersion,
+  validateStatusTransition
+} from '../lib/backlog-shared.js';
+import {
+  readTodos,
+  writeTodos,
+  listTodos,
+  validateDependencies
+} from '../lib/backlog-todo-shared.js';
+import { getBacklogDir, getCompletedBacklogDir } from '../lib/path-resolver.js';
 
 /**
  * Check if a file exists using fs/promises
@@ -80,6 +96,7 @@ async function handleCreate(args: any, context: any) {
    }
 
    const content = createBacklogTemplate(topic, description, priority, context);
+   mkdirSync(dirpath, { recursive: true });
    await writeFile(filepath, content);
   return `Created backlog item: ${filepath}`;
 }

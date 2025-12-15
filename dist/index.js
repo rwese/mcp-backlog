@@ -2980,7 +2980,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve.call(this, root, ref);
+      let _sch = resolve2.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -3007,7 +3007,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve(root, ref) {
+    function resolve2(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3582,7 +3582,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve(baseURI, relativeURI, options) {
+    function resolve2(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -3809,7 +3809,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve,
+      resolve: resolve2,
       resolveComponent,
       equal,
       serialize,
@@ -16702,7 +16702,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = (_c = (_a2 = task2.pollInterval) !== null && _a2 !== void 0 ? _a2 : (_b = this._options) === null || _b === void 0 ? void 0 : _b.defaultTaskPollInterval) !== null && _c !== void 0 ? _c : 1e3;
-        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
         (_d = options === null || options === void 0 ? void 0 : options.signal) === null || _d === void 0 ? void 0 : _d.throwIfAborted();
       }
     } catch (error2) {
@@ -16719,7 +16719,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options !== null && options !== void 0 ? options : {};
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve2, reject) => {
       var _a2, _b, _c, _d, _e, _f, _g;
       const earlyReject = (error2) => {
         reject(error2);
@@ -16800,7 +16800,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve(parseResult.data);
+            resolve2(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -17066,12 +17066,12 @@ var Protocol = class {
       }
     } catch (_d) {
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve2, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve, interval);
+      const timeoutId = setTimeout(resolve2, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -17819,23 +17819,380 @@ var StdioServerTransport = class {
     (_a2 = this.onclose) === null || _a2 === void 0 ? void 0 : _a2.call(this);
   }
   send(message) {
-    return new Promise((resolve) => {
+    return new Promise((resolve2) => {
       const json = serializeMessage(message);
       if (this._stdout.write(json)) {
-        resolve();
+        resolve2();
       } else {
-        this._stdout.once("drain", resolve);
+        this._stdout.once("drain", resolve2);
       }
     });
   }
 };
 
 // src/index.ts
-import { unlinkSync, rmSync } from "fs";
+import { unlinkSync, rmSync, mkdirSync as mkdirSync2 } from "fs";
+import { readFile as readFile2, writeFile as writeFile2, access as access2 } from "fs/promises";
+
+// lib/backlog-shared.ts
+import { readdirSync } from "fs";
 import { readFile, writeFile, access } from "fs/promises";
+
+// lib/path-resolver.ts
+import { execSync } from "child_process";
+import { createHash } from "crypto";
+import { homedir } from "os";
+import { resolve, join } from "path";
+import { existsSync } from "fs";
+function getXDGDataHome() {
+  return process.env.XDG_DATA_HOME || join(homedir(), ".local", "share");
+}
+function getBacklogRootDir() {
+  if (process.env.MCP_BACKLOG_DIR) {
+    return resolve(process.env.MCP_BACKLOG_DIR);
+  }
+  const xdgDataHome = getXDGDataHome();
+  const backlogDir = join(xdgDataHome, "mcp-backlog");
+  const legacyDir = join(process.cwd(), ".agent");
+  if (existsSync(legacyDir) && !existsSync(backlogDir)) {
+    return legacyDir;
+  }
+  return backlogDir;
+}
+function getProjectIdentifier() {
+  try {
+    const gitRoot = execSync("git rev-parse --show-toplevel", {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"]
+    }).trim();
+    const parts = gitRoot.split("/");
+    return parts[parts.length - 1] || "default";
+  } catch (error2) {
+    const cwd = process.cwd();
+    const hash = createHash("sha256").update(cwd).digest("hex").substring(0, 8);
+    const parts = cwd.split("/");
+    const basename = parts[parts.length - 1] || "project";
+    return `${basename}-${hash}`;
+  }
+}
+function getProjectBacklogDir() {
+  const rootDir = getBacklogRootDir();
+  const projectId = getProjectIdentifier();
+  const legacyDir = join(process.cwd(), ".agent");
+  if (rootDir === legacyDir) {
+    return rootDir;
+  }
+  return join(rootDir, "projects", projectId);
+}
+function resolveBacklogPath(...paths) {
+  const projectDir = getProjectBacklogDir();
+  return join(projectDir, ...paths);
+}
+function getBacklogDir() {
+  return resolveBacklogPath("Backlog");
+}
+function getCompletedBacklogDir() {
+  return resolveBacklogPath("COMPLETED_Backlog");
+}
+
+// lib/backlog-shared.ts
 async function fileExists(path) {
   try {
     await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function parseFrontmatter(content) {
+  if (!content.startsWith("---\n")) {
+    return null;
+  }
+  const lines = content.split("\n");
+  let endIndex = -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i] === "---") {
+      endIndex = i;
+      break;
+    }
+  }
+  if (endIndex === -1) {
+    return null;
+  }
+  const frontmatter = {};
+  for (let i = 1; i < endIndex; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const colonIndex = line.indexOf(":");
+    if (colonIndex === -1) continue;
+    const key = line.substring(0, colonIndex).trim();
+    let value = line.substring(colonIndex + 1).trim();
+    if (value.startsWith('"') && value.endsWith('"') || value.startsWith("'") && value.endsWith("'")) {
+      value = value.slice(1, -1);
+    }
+    if (!isNaN(Number(value)) && value !== "") {
+      frontmatter[key] = Number(value);
+    } else if (value === "true") {
+      frontmatter[key] = true;
+    } else if (value === "false") {
+      frontmatter[key] = false;
+    } else {
+      frontmatter[key] = value;
+    }
+  }
+  const body = lines.slice(endIndex + 1).join("\n");
+  return { frontmatter, body };
+}
+async function parseBacklogFile(filepath) {
+  const content = await readFile(filepath, "utf8");
+  const parsed = parseFrontmatter(content);
+  if (parsed) {
+    return {
+      topic: parsed.frontmatter.topic || "",
+      priority: parsed.frontmatter.priority || "medium",
+      status: parsed.frontmatter.status || "new",
+      version: parsed.frontmatter.version || 1,
+      created: parsed.frontmatter.created || "",
+      agent: parsed.frontmatter.agent || "",
+      session: parsed.frontmatter.session || "",
+      filepath
+    };
+  }
+  const lines = content.split("\n");
+  const data = {
+    topic: "",
+    priority: "medium",
+    status: "new",
+    version: 1,
+    created: "",
+    agent: "",
+    session: "",
+    filepath
+  };
+  for (const line of lines) {
+    if (line.startsWith("# Backlog: ")) {
+      data.topic = line.replace("# Backlog: ", "").trim();
+    } else if (line.startsWith("## Priority: ")) {
+      data.priority = line.replace("## Priority: ", "").trim();
+    } else if (line.startsWith("## Status: ")) {
+      data.status = line.replace("## Status: ", "").trim();
+    } else if (line.startsWith("## Version: ")) {
+      data.version = parseInt(line.replace("## Version: ", "").trim());
+    } else if (line.startsWith("- Date: ")) {
+      data.created = line.replace("- Date: ", "").trim();
+    } else if (line.startsWith("- Agent: ")) {
+      data.agent = line.replace("- Agent: ", "").trim();
+    } else if (line.startsWith("- Session: ")) {
+      data.session = line.replace("- Session: ", "").trim();
+    }
+  }
+  return data;
+}
+async function listBacklogItems(statusFilter, priorityFilter) {
+  const items = [];
+  const dirs = [
+    { path: getBacklogDir(), isSubdir: true },
+    { path: getCompletedBacklogDir(), isSubdir: false }
+  ];
+  for (const dir of dirs) {
+    try {
+      const entries = readdirSync(dir.path);
+      for (const entry of entries) {
+        let filepath;
+        if (dir.isSubdir) {
+          const itemPath = `${dir.path}/${entry}/item.md`;
+          if (await fileExists(itemPath)) {
+            filepath = itemPath;
+          } else {
+            if (entry.endsWith(".md")) {
+              filepath = `${dir.path}/${entry}`;
+            } else {
+              continue;
+            }
+          }
+        } else {
+          if (!entry.endsWith(".md")) continue;
+          filepath = `${dir.path}/${entry}`;
+        }
+        const data = await parseBacklogFile(filepath);
+        if (statusFilter && data.status !== statusFilter) continue;
+        if (priorityFilter && data.priority !== priorityFilter) continue;
+        items.push(data);
+      }
+    } catch (e) {
+    }
+  }
+  return items;
+}
+function getNextVersion(filename) {
+  try {
+    const files = readdirSync(getCompletedBacklogDir());
+    const versions = files.filter((f) => f.startsWith(filename + "-v") && f.endsWith(".md")).map((f) => {
+      const match = f.match(/-v(\d+)\.md$/);
+      return match ? parseInt(match[1]) : 0;
+    });
+    return versions.length > 0 ? Math.max(...versions) + 1 : 1;
+  } catch (e) {
+    return 1;
+  }
+}
+async function handleListBacklog(args) {
+  const { status, priority } = args;
+  const items = await listBacklogItems(status, priority);
+  if (items.length === 0) {
+    return "No backlog items found";
+  }
+  return JSON.stringify(items, null, 2);
+}
+var ALLOWED_STATUS_TRANSITIONS = {
+  new: ["ready", "done", "wontfix"],
+  // allow cancelling from new
+  ready: ["review", "new", "wontfix"],
+  // allow back to new for edits or cancel
+  review: ["done", "reopen", "wontfix"],
+  // approve, reject, or cancel
+  done: [],
+  // terminal state
+  reopen: ["review", "wontfix"],
+  // resubmit for review or cancel
+  wontfix: []
+  // terminal state
+};
+function validateStatusTransition(currentStatus, newStatus) {
+  if (currentStatus === newStatus) {
+    return;
+  }
+  const allowed = ALLOWED_STATUS_TRANSITIONS[currentStatus];
+  if (!allowed || !allowed.includes(newStatus)) {
+    throw new Error(`Invalid status transition from '${currentStatus}' to '${newStatus}'. Allowed transitions from '${currentStatus}': ${allowed ? allowed.join(", ") : "none"}`);
+  }
+}
+function generateBacklogFilename(topic) {
+  return topic.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+function createBacklogTemplate(topic, description, priority, context) {
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+  return `---
+topic: "${topic}"
+priority: ${priority}
+status: new
+version: 1
+created: ${timestamp}
+agent: ${context.agent}
+session: ${context.sessionID}
+---
+
+# Backlog: ${topic}
+
+## Description
+
+${description}
+
+---
+
+## Workflow
+
+1. New Work: Use **backlog-write** tool to create backlog items
+2. Completion: Use **backlog-done** tool to mark complete
+3. Reference: Use **backlog-read** tool to check completed items for examples
+`;
+}
+function amendBacklogTemplate(topic, description, priority, status, version2, originalCreated, originalAgent, originalSession, context) {
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+  return `---
+topic: "${topic}"
+priority: ${priority}
+status: ${status}
+version: ${version2}
+created: ${originalCreated}
+agent: ${originalAgent}
+session: ${originalSession}
+amended: ${timestamp}
+amendedBy: ${context.agent}
+amendedSession: ${context.sessionID}
+---
+
+# Backlog: ${topic}
+
+## Description
+
+${description}
+
+---
+
+## Workflow
+
+1. New Work: Use **backlog-write** tool to create backlog items
+2. Completion: Use **backlog-done** tool to mark complete
+3. Reference: Use **backlog-read** tool to check completed items for examples
+`;
+}
+
+// lib/backlog-todo-shared.ts
+import { mkdirSync, readFileSync, writeFileSync } from "fs";
+function getTodosFilePath(topic) {
+  const normalized = generateBacklogFilename(topic);
+  const backlogDir = getBacklogDir();
+  return `${backlogDir}/${normalized}/todos.json`;
+}
+function ensureTodosDirectory(topic) {
+  const normalized = generateBacklogFilename(topic);
+  const backlogDir = getBacklogDir();
+  const dirPath = `${backlogDir}/${normalized}`;
+  mkdirSync(dirPath, { recursive: true });
+}
+function readTodos(topic) {
+  const filePath = getTodosFilePath(topic);
+  try {
+    const content = readFileSync(filePath, "utf8");
+    return JSON.parse(content);
+  } catch (error2) {
+    return { backlogTopic: topic, todos: [] };
+  }
+}
+function writeTodos(topic, data) {
+  ensureTodosDirectory(topic);
+  const filePath = getTodosFilePath(topic);
+  const json = JSON.stringify(data, null, 2);
+  writeFileSync(filePath, json);
+}
+function listTodos(topic, filters) {
+  const data = readTodos(topic);
+  let todos = data.todos;
+  if (filters?.status) {
+    todos = todos.filter((t) => t.status === filters.status);
+  }
+  if (filters?.batch) {
+    todos = todos.filter((t) => t.batch === filters.batch);
+  }
+  return todos;
+}
+function validateDependencies(todos, todoId) {
+  const todo = todos.find((t) => t.id === todoId);
+  if (!todo) {
+    throw new Error(`Todo with ID ${todoId} not found`);
+  }
+  const missing = [];
+  const incomplete = [];
+  for (const depId of todo.dependencies) {
+    const dep = todos.find((t) => t.id === depId);
+    if (!dep) {
+      missing.push(depId);
+    } else if (dep.status !== "completed") {
+      incomplete.push(depId);
+    }
+  }
+  return {
+    valid: missing.length === 0 && incomplete.length === 0,
+    missing,
+    incomplete
+  };
+}
+
+// src/index.ts
+async function fileExists2(path) {
+  try {
+    await access2(path);
     return true;
   } catch {
     return false;
@@ -17880,14 +18237,15 @@ async function handleCreate(args, context) {
   const backlogDir = getBacklogDir();
   const dirpath = `${backlogDir}/${filename}`;
   const filepath = `${dirpath}/item.md`;
-  const newExists = await fileExists(filepath);
+  const newExists = await fileExists2(filepath);
   const legacyPath = `${backlogDir}/${filename}.md`;
-  const legacyExists = await fileExists(legacyPath);
+  const legacyExists = await fileExists2(legacyPath);
   if (newExists || legacyExists) {
     throw new Error(`Backlog item already exists. Use 'amend' to update it.`);
   }
   const content = createBacklogTemplate(topic, description, priority, context);
-  await writeFile(filepath, content);
+  mkdirSync2(dirpath, { recursive: true });
+  await writeFile2(filepath, content);
   return `Created backlog item: ${filepath}`;
 }
 async function handleAmend(args, context) {
@@ -17901,8 +18259,8 @@ async function handleAmend(args, context) {
   const filepath = `${dirpath}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
   let actualPath = filepath;
-  const newExists = await fileExists(filepath);
-  const legacyExists = await fileExists(legacyPath);
+  const newExists = await fileExists2(filepath);
+  const legacyExists = await fileExists2(legacyPath);
   if (!newExists && !legacyExists) {
     throw new Error(`Backlog item not found: ${filepath}`);
   }
@@ -17931,7 +18289,7 @@ async function handleAmend(args, context) {
     currentData.session || "unknown",
     context
   );
-  await writeFile(filepath, newContent);
+  await writeFile2(filepath, newContent);
   const updates = [];
   if (status) updates.push(`status=${status}`);
   if (priority) updates.push(`priority=${priority}`);
@@ -17946,8 +18304,8 @@ async function handleSubmit(args, context) {
   const backlogDir = getBacklogDir();
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
-  const newExists = await fileExists(filepath);
-  const legacyExists = await fileExists(legacyPath);
+  const newExists = await fileExists2(filepath);
+  const legacyExists = await fileExists2(legacyPath);
   const actualPath = newExists ? filepath : legacyExists ? legacyPath : null;
   if (!actualPath) throw new Error(`Backlog item not found`);
   const currentData = await parseBacklogFile(actualPath);
@@ -17963,8 +18321,8 @@ async function handleApprove(args, context) {
   const backlogDir = getBacklogDir();
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
-  const newExists = await fileExists(filepath);
-  const legacyExists = await fileExists(legacyPath);
+  const newExists = await fileExists2(filepath);
+  const legacyExists = await fileExists2(legacyPath);
   const actualPath = newExists ? filepath : legacyExists ? legacyPath : null;
   if (!actualPath) throw new Error(`Backlog item not found`);
   const currentData = await parseBacklogFile(actualPath);
@@ -17980,8 +18338,8 @@ async function handleReopen(args, context) {
   const backlogDir = getBacklogDir();
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
-  const newExists = await fileExists(filepath);
-  const legacyExists = await fileExists(legacyPath);
+  const newExists = await fileExists2(filepath);
+  const legacyExists = await fileExists2(legacyPath);
   const actualPath = newExists ? filepath : legacyExists ? legacyPath : null;
   if (!actualPath) throw new Error(`Backlog item not found`);
   const currentData = await parseBacklogFile(actualPath);
@@ -18000,8 +18358,8 @@ async function handleWontfix(args, context) {
   const backlogDir = getBacklogDir();
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
-  const newExists = await fileExists(filepath);
-  const legacyExists = await fileExists(legacyPath);
+  const newExists = await fileExists2(filepath);
+  const legacyExists = await fileExists2(legacyPath);
   const actualPath = newExists ? filepath : legacyExists ? legacyPath : null;
   if (!actualPath) throw new Error(`Backlog item not found`);
   const currentData = await parseBacklogFile(actualPath);
@@ -18031,8 +18389,8 @@ async function handleDone(args, context) {
   const filepath = `${backlogDir}/${filename}/item.md`;
   const legacyPath = `${backlogDir}/${filename}.md`;
   let actualPath = null;
-  const newExists = await fileExists(filepath);
-  const legacyExists = await fileExists(legacyPath);
+  const newExists = await fileExists2(filepath);
+  const legacyExists = await fileExists2(legacyPath);
   if (newExists) {
     actualPath = filepath;
   } else if (legacyExists) {
@@ -18040,7 +18398,7 @@ async function handleDone(args, context) {
   } else {
     throw new Error(`Backlog item not found for topic: ${topic}`);
   }
-  let content = await readFile(actualPath, "utf8");
+  let content = await readFile2(actualPath, "utf8");
   let finalStatus = "done";
   if (content.startsWith("---\n")) {
     const statusMatch = content.match(/status: (wontfix|done)/);
@@ -18073,7 +18431,7 @@ ${summary}
   const prefix = finalStatus === "wontfix" ? "WONTFIX" : "DONE";
   const completedDir = getCompletedBacklogDir();
   const completedPath = `${completedDir}/${prefix}_${filename}.md`;
-  await writeFile(completedPath, content, "utf8");
+  await writeFile2(completedPath, content, "utf8");
   if (actualPath === filepath) {
     const dirpath = `${backlogDir}/${filename}`;
     rmSync(dirpath, { recursive: true, force: true });

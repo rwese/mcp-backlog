@@ -37,11 +37,11 @@ async function handleCreate(args, context) {
      throw new Error(`Backlog item already exists. Use 'amend' to update it.`);
    }
 
-   const content = createBacklogTemplate(topic, description, priority, context);
+    const content = createBacklogTemplate(topic, description, priority, context);
 
-   // Create directory structure
-   await writeFile(filepath, content);
-  return `Created backlog item: ${filepath}`;
+    // Create directory structure
+    await writeFile(filepath, content);
+   return `Created backlog item: ${filepath}\nNext: Use backlog-todo-write to add todos, then submit when ready`;
 }
 
 async function handleAmend(args, context) {
@@ -113,135 +113,139 @@ async function handleAmend(args, context) {
 
 
 async function handleSubmit(args, context) {
-   const { topic } = args;
+    const { topic } = args;
 
-   if (!topic) {
-     throw new Error("topic is required for submit action");
+    if (!topic) {
+      throw new Error("topic is required for submit action");
+    }
+
+    const filename = generateBacklogFilename(topic);
+    const filepath = `.agent/Backlog/${filename}/item.md`;
+    const legacyPath = `.agent/Backlog/${filename}.md`;
+
+    // Check both paths
+    const newExists = await fileExists(filepath);
+    const legacyExists = await fileExists(legacyPath);
+    const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
+    
+    if (!actualPath) {
+      throw new Error(`Backlog item not found`);
+    }
+
+   // Parse current version
+   const currentData = await parseBacklogFile(actualPath);
+
+   // Validate current status is 'new'
+   if (currentData.status !== 'new') {
+     throw new Error(`Cannot submit item with status '${currentData.status}'. Item must be in 'new' status to submit.`);
    }
 
-   const filename = generateBacklogFilename(topic);
-   const filepath = `.agent/Backlog/${filename}/item.md`;
-   const legacyPath = `.agent/Backlog/${filename}.md`;
-
-   // Check both paths
-   const newExists = await fileExists(filepath);
-   const legacyExists = await fileExists(legacyPath);
-   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
-   
-   if (!actualPath) {
-     throw new Error(`Backlog item not found`);
-   }
-
-  // Parse current version
-  const currentData = await parseBacklogFile(actualPath);
-
-  // Validate current status is 'new'
-  if (currentData.status !== 'new') {
-    throw new Error(`Cannot submit item with status '${currentData.status}'. Item must be in 'new' status to submit.`);
-  }
-
-  // Use amend logic to transition to 'ready'
-  return await handleAmend({ topic, status: 'ready' }, context);
+   // Use amend logic to transition to 'ready'
+   const result = await handleAmend({ topic, status: 'ready' }, context);
+   return result + '\nStatus: ready. Next: Create todos and begin work, then move to review';
 }
 
 async function handleApprove(args, context) {
-   const { topic } = args;
+    const { topic } = args;
 
-   if (!topic) {
-     throw new Error("topic is required for approve action");
+    if (!topic) {
+      throw new Error("topic is required for approve action");
+    }
+
+    const filename = generateBacklogFilename(topic);
+    const filepath = `.agent/Backlog/${filename}/item.md`;
+    const legacyPath = `.agent/Backlog/${filename}.md`;
+
+    // Check both paths
+    const newExists = await fileExists(filepath);
+    const legacyExists = await fileExists(legacyPath);
+    const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
+    
+    if (!actualPath) {
+      throw new Error(`Backlog item not found`);
+    }
+
+   // Parse current version
+   const currentData = await parseBacklogFile(actualPath);
+
+   // Validate current status is 'review'
+   if (currentData.status !== 'review') {
+     throw new Error(`Cannot approve item with status '${currentData.status}'. Item must be in 'review' status to approve.`);
    }
 
-   const filename = generateBacklogFilename(topic);
-   const filepath = `.agent/Backlog/${filename}/item.md`;
-   const legacyPath = `.agent/Backlog/${filename}.md`;
-
-   // Check both paths
-   const newExists = await fileExists(filepath);
-   const legacyExists = await fileExists(legacyPath);
-   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
-   
-   if (!actualPath) {
-     throw new Error(`Backlog item not found`);
-   }
-
-  // Parse current version
-  const currentData = await parseBacklogFile(actualPath);
-
-  // Validate current status is 'review'
-  if (currentData.status !== 'review') {
-    throw new Error(`Cannot approve item with status '${currentData.status}'. Item must be in 'review' status to approve.`);
-  }
-
-  // Use amend logic to transition to 'done'
-  return await handleAmend({ topic, status: 'done' }, context);
+   // Use amend logic to transition to 'done'
+   const result = await handleAmend({ topic, status: 'done' }, context);
+   return result + '\nStatus: done. Item completed successfully';
 }
 
 async function handleReopen(args, context) {
-   const { topic, description } = args;
+    const { topic, description } = args;
 
-   if (!topic) {
-     throw new Error("topic is required for reopen action");
+    if (!topic) {
+      throw new Error("topic is required for reopen action");
+    }
+
+    const filename = generateBacklogFilename(topic);
+    const filepath = `.agent/Backlog/${filename}/item.md`;
+    const legacyPath = `.agent/Backlog/${filename}.md`;
+
+    // Check both paths
+    const newExists = await fileExists(filepath);
+    const legacyExists = await fileExists(legacyPath);
+    const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
+    
+    if (!actualPath) {
+      throw new Error(`Backlog item not found`);
+    }
+
+   // Parse current version
+   const currentData = await parseBacklogFile(actualPath);
+
+   // Validate current status is 'review' or 'done'
+   if (currentData.status !== 'review' && currentData.status !== 'done') {
+     throw new Error(`Cannot reopen item with status '${currentData.status}'. Item must be in 'review' or 'done' status to reopen.`);
    }
 
-   const filename = generateBacklogFilename(topic);
-   const filepath = `.agent/Backlog/${filename}/item.md`;
-   const legacyPath = `.agent/Backlog/${filename}.md`;
-
-   // Check both paths
-   const newExists = await fileExists(filepath);
-   const legacyExists = await fileExists(legacyPath);
-   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
-   
-   if (!actualPath) {
-     throw new Error(`Backlog item not found`);
+   if (!description) {
+     throw new Error("description (review notes) is required for reopen action");
    }
 
-  // Parse current version
-  const currentData = await parseBacklogFile(actualPath);
-
-  // Validate current status is 'review' or 'done'
-  if (currentData.status !== 'review' && currentData.status !== 'done') {
-    throw new Error(`Cannot reopen item with status '${currentData.status}'. Item must be in 'review' or 'done' status to reopen.`);
-  }
-
-  if (!description) {
-    throw new Error("description (review notes) is required for reopen action");
-  }
-
-  // Use amend logic to transition to 'reopen' with review notes
-  return await handleAmend({ topic, status: 'reopen', description }, context);
+   // Use amend logic to transition to 'reopen' with review notes
+   const result = await handleAmend({ topic, status: 'reopen', description }, context);
+   return result + '\nStatus: reopen. Next: Address review feedback and resubmit';
 }
 
 async function handleWontfix(args, context) {
-   const { topic, description } = args;
+    const { topic, description } = args;
 
-   if (!topic) {
-     throw new Error("topic is required for wontfix action");
+    if (!topic) {
+      throw new Error("topic is required for wontfix action");
+    }
+
+    const filename = generateBacklogFilename(topic);
+    const filepath = `.agent/Backlog/${filename}/item.md`;
+    const legacyPath = `.agent/Backlog/${filename}.md`;
+
+    // Check both paths
+    const newExists = await fileExists(filepath);
+    const legacyExists = await fileExists(legacyPath);
+    const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
+    
+    if (!actualPath) {
+      throw new Error(`Backlog item not found`);
+    }
+
+   // Parse current version
+   const currentData = await parseBacklogFile(actualPath);
+
+   // Allow wontfix from any non-terminal state
+   if (currentData.status === 'done' || currentData.status === 'wontfix') {
+     throw new Error(`Cannot mark item with status '${currentData.status}' as wontfix. Item is already in a terminal state.`);
    }
 
-   const filename = generateBacklogFilename(topic);
-   const filepath = `.agent/Backlog/${filename}/item.md`;
-   const legacyPath = `.agent/Backlog/${filename}.md`;
-
-   // Check both paths
-   const newExists = await fileExists(filepath);
-   const legacyExists = await fileExists(legacyPath);
-   const actualPath = newExists ? filepath : (legacyExists ? legacyPath : null);
-   
-   if (!actualPath) {
-     throw new Error(`Backlog item not found`);
-   }
-
-  // Parse current version
-  const currentData = await parseBacklogFile(actualPath);
-
-  // Allow wontfix from any non-terminal state
-  if (currentData.status === 'done' || currentData.status === 'wontfix') {
-    throw new Error(`Cannot mark item with status '${currentData.status}' as wontfix. Item is already in a terminal state.`);
-  }
-
-  // Use amend logic to transition to 'wontfix' with optional reason
-  return await handleAmend({ topic, status: 'wontfix', description }, context);
+   // Use amend logic to transition to 'wontfix' with optional reason
+   const result = await handleAmend({ topic, status: 'wontfix', description }, context);
+   return result + '\nStatus: wontfix. Item closed without completion';
 }
 
 export default tool({

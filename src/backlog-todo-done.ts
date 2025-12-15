@@ -53,21 +53,21 @@ export default tool({
         throw new Error(`Cannot mark todo ${todoId} as complete. ${errors.join(". ")}`);
       }
 
-      // Mark complete
-      const todo = await updateTodoStatus(topic, todoId, "completed");
+       // Mark complete
+       const todo = await updateTodoStatus(topic, todoId, "completed");
 
-      return JSON.stringify({ completed: todo }, null, 2);
+       return JSON.stringify({ completed: todo, hint: "Todo completed. Continue remaining todos or submit backlog for review" }, null, 2);
     }
 
-    if (action === "list") {
-      const todos = await listTodos(topic, { status, batch });
+     if (action === "list") {
+       const todos = await listTodos(topic, { status, batch });
 
-      if (todos.length === 0) {
-        return `No todos found for backlog: ${topic}`;
-      }
+       if (todos.length === 0) {
+         return `No todos found for backlog: ${topic}`;
+       }
 
-      return JSON.stringify({ backlogTopic: topic, todos }, null, 2);
-    }
+       return JSON.stringify({ backlogTopic: topic, todos, hint: "Review completed todos and continue remaining work" }, null, 2);
+     }
 
     throw new Error(`Unknown action: ${action}`);
   }

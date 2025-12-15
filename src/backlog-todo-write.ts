@@ -49,18 +49,18 @@ export default tool({
 
       // Update batch/dependencies if provided
       if (batch || dependencies) {
-        const data = readTodos(topic);
-        const foundTodo = data.todos.find(t => t.id === todo.id);
-        if (foundTodo) {
-          if (batch) foundTodo.batch = batch;
-          if (dependencies) foundTodo.dependencies = dependencies;
-          writeTodos(topic, data);
-          // Return the updated todo
-          return JSON.stringify({ created: foundTodo }, null, 2);
-        }
-      }
+         const data = readTodos(topic);
+         const foundTodo = data.todos.find(t => t.id === todo.id);
+         if (foundTodo) {
+           if (batch) foundTodo.batch = batch;
+           if (dependencies) foundTodo.dependencies = dependencies;
+           writeTodos(topic, data);
+           // Return the updated todo
+           return JSON.stringify({ created: foundTodo, hint: "Todo created. Next: Mark in_progress when starting work" }, null, 2);
+         }
+       }
 
-      return JSON.stringify({ created: todo }, null, 2);
+       return JSON.stringify({ created: todo, hint: "Todo created. Next: Mark in_progress when starting work" }, null, 2);
     }
 
     if (action === "update") {
@@ -80,20 +80,20 @@ export default tool({
       if (batch !== undefined) todo.batch = batch;
       if (dependencies) todo.dependencies = dependencies;
 
-      writeTodos(topic, data);
+       writeTodos(topic, data);
 
-      return JSON.stringify({ updated: todo }, null, 2);
+       return JSON.stringify({ updated: todo, hint: "Todo updated. Next: Mark in_progress when starting work" }, null, 2);
     }
 
-    if (action === "list") {
-      const todos = listTodos(topic, { status, batch });
+     if (action === "list") {
+       const todos = listTodos(topic, { status, batch });
 
-      if (todos.length === 0) {
-        return `No todos found for backlog: ${topic}`;
-      }
+       if (todos.length === 0) {
+         return `No todos found for backlog: ${topic}`;
+       }
 
-      return JSON.stringify({ backlogTopic: topic, todos }, null, 2);
-    }
+       return JSON.stringify({ backlogTopic: topic, todos, hint: "Review todos and mark in_progress as needed" }, null, 2);
+     }
 
     throw new Error(`Unknown action: ${action}`);
   }

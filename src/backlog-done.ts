@@ -92,7 +92,8 @@ async function handleDone(args, context) {
     unlinkSync(actualPath);
   }
 
-  return `Marked backlog item as ${finalStatus}: ${completedPath}${summary ? ' (with summary)' : ''}`;
+   const hint = finalStatus === 'wontfix' ? 'Item closed without completion' : 'Item archived. Workflow complete';
+   return `Marked backlog item as ${finalStatus}: ${completedPath}${summary ? ' (with summary)' : ''}\n${hint}`;
 }
 
 

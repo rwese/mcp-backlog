@@ -120,12 +120,12 @@ describe("MCP Server Integration Tests", () => {
     expect(response.result.tools.length).toBeGreaterThan(0);
     
     const toolNames = response.result.tools.map(t => t.name);
-    expect(toolNames).toContain("backlog-read");
-    expect(toolNames).toContain("backlog-write");
-    expect(toolNames).toContain("backlog-done");
-    expect(toolNames).toContain("backlog-todo-read");
-    expect(toolNames).toContain("backlog-todo-write");
-    expect(toolNames).toContain("backlog-todo-done");
+    expect(toolNames).toContain("read");
+    expect(toolNames).toContain("write");
+    expect(toolNames).toContain("done");
+    expect(toolNames).toContain("todo-read");
+    expect(toolNames).toContain("todo-write");
+    expect(toolNames).toContain("todo-done");
   });
 
   it("should execute backlog-read (list) without errors", async () => {
@@ -134,7 +134,7 @@ describe("MCP Server Integration Tests", () => {
       id: 2,
       method: "tools/call",
       params: {
-        name: "backlog-read",
+        name: "read",
         arguments: {},
       },
     };
@@ -153,7 +153,7 @@ describe("MCP Server Integration Tests", () => {
       id: 3,
       method: "tools/call",
       params: {
-        name: "backlog-write",
+        name: "write",
         arguments: {
           action: "list",
         },
@@ -173,7 +173,7 @@ describe("MCP Server Integration Tests", () => {
       id: 4,
       method: "tools/call",
       params: {
-        name: "backlog-write",
+        name: "write",
         arguments: {
           action: "create",
           topic: "Test Item",
@@ -197,7 +197,7 @@ describe("MCP Server Integration Tests", () => {
       id: 5,
       method: "tools/call",
       params: {
-        name: "backlog-write",
+        name: "write",
         arguments: {
           action: "create",
           topic: "Test List Item",
@@ -213,7 +213,7 @@ describe("MCP Server Integration Tests", () => {
       id: 6,
       method: "tools/call",
       params: {
-        name: "backlog-read",
+        name: "read",
         arguments: {},
       },
     };
@@ -232,7 +232,7 @@ describe("MCP Server Integration Tests", () => {
       id: 7,
       method: "tools/call",
       params: {
-        name: "backlog-write",
+        name: "write",
         arguments: {
           action: "create",
           topic: "Todo Test Item",
@@ -247,7 +247,7 @@ describe("MCP Server Integration Tests", () => {
       id: 8,
       method: "tools/call",
       params: {
-        name: "backlog-todo-write",
+        name: "todo-write",
         arguments: {
           action: "create",
           topic: "Todo Test Item",
@@ -266,7 +266,7 @@ describe("MCP Server Integration Tests", () => {
       id: 9,
       method: "tools/call",
       params: {
-        name: "backlog-todo-read",
+        name: "todo-read",
         arguments: {
           topic: "Todo Test Item",
         },
@@ -286,7 +286,7 @@ describe("MCP Server Integration Tests", () => {
       id: 10,
       method: "tools/call",
       params: {
-        name: "backlog-write",
+        name: "write",
         arguments: {
           action: "create",
           // Missing topic and description
@@ -324,7 +324,7 @@ describe("MCP Server Integration Tests", () => {
       id: 12,
       method: "tools/call",
       params: {
-        name: "backlog-write",
+        name: "write",
         arguments: {
           action: "create",
           topic: "Fetch Test Item",
@@ -340,7 +340,7 @@ describe("MCP Server Integration Tests", () => {
       id: 13,
       method: "tools/call",
       params: {
-        name: "backlog-read",
+        name: "read",
         arguments: {
           topic: "Fetch Test Item",
         },
@@ -368,7 +368,7 @@ describe("MCP Server Integration Tests", () => {
       id: 14,
       method: "tools/call",
       params: {
-        name: "backlog-read",
+        name: "read",
         arguments: {
           topic: "Non Existent Item",
         },
@@ -388,7 +388,7 @@ describe("MCP Server Integration Tests", () => {
       id: 15,
       method: "tools/call",
       params: {
-        name: "backlog-write",
+        name: "write",
         arguments: {
           action: "create",
           topic: "List Test 1",
@@ -403,7 +403,7 @@ describe("MCP Server Integration Tests", () => {
       id: 16,
       method: "tools/call",
       params: {
-        name: "backlog-write",
+        name: "write",
         arguments: {
           action: "create",
           topic: "List Test 2",
@@ -419,7 +419,7 @@ describe("MCP Server Integration Tests", () => {
       id: 17,
       method: "tools/call",
       params: {
-        name: "backlog-read",
+        name: "read",
         arguments: {},
       },
     };

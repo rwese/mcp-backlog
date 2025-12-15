@@ -117,22 +117,22 @@ describe("Build Validation", () => {
 
     it("should define all six tools", () => {
       const content = getDistContent();
-      expect(content).toContain('"backlog-read"');
-      expect(content).toContain('"backlog-write"');
-      expect(content).toContain('"backlog-done"');
-      expect(content).toContain('"backlog-todo-read"');
-      expect(content).toContain('"backlog-todo-write"');
-      expect(content).toContain('"backlog-todo-done"');
+      expect(content).toContain('"read"');
+      expect(content).toContain('"write"');
+      expect(content).toContain('"done"');
+      expect(content).toContain('"todo-read"');
+      expect(content).toContain('"todo-write"');
+      expect(content).toContain('"todo-done"');
     });
 
     it("should handle tool execution with switch cases", () => {
       const content = getDistContent();
-      expect(content).toMatch(/case\s+["']backlog-read["']/);
-      expect(content).toMatch(/case\s+["']backlog-write["']/);
-      expect(content).toMatch(/case\s+["']backlog-done["']/);
-      expect(content).toMatch(/case\s+["']backlog-todo-read["']/);
-      expect(content).toMatch(/case\s+["']backlog-todo-write["']/);
-      expect(content).toMatch(/case\s+["']backlog-todo-done["']/);
+      expect(content).toMatch(/case\s+["']read["']/);
+      expect(content).toMatch(/case\s+["']write["']/);
+      expect(content).toMatch(/case\s+["']done["']/);
+      expect(content).toMatch(/case\s+["']todo-read["']/);
+      expect(content).toMatch(/case\s+["']todo-write["']/);
+      expect(content).toMatch(/case\s+["']todo-done["']/);
     });
   });
 

@@ -337,6 +337,81 @@ export function getNextVersion(filename: string): number {
 }
 
 /**
+ * Get a single backlog item by topic with full content
+ * @param topic Topic name
+ * @returns Backlog item with full content (frontmatter + body) or null if not found
+ */
+export async function getBacklogItem(topic: string): Promise<{
+  topic: string;
+  priority: string;
+  status: string;
+  version: number;
+  created: string;
+  agent: string;
+  session: string;
+  description: string;
+  filepath: string;
+} | null> {
+  const filename = generateBacklogFilename(topic);
+  const dirpath = getBacklogDir();
+  const completedPath = getCompletedBacklogDir();
+  
+  // Check new structure first
+  const newStructurePath = `${dirpath}/${filename}/item.md`;
+  const legacyPath = `${dirpath}/${filename}.md`;
+  const completedPattern = `${completedPath}/${filename}`;
+  
+  let actualPath: string | null = null;
+  
+  // Check active backlog (new structure)
+  if (await fileExists(newStructurePath)) {
+    actualPath = newStructurePath;
+  }
+  // Check active backlog (legacy structure)
+  else if (await fileExists(legacyPath)) {
+    actualPath = legacyPath;
+  }
+  // Check completed backlog (versioned files)
+  else {
+    try {
+      const completedFiles = readdirSync(completedPath);
+      const versionedFile = completedFiles.find(f => 
+        f.startsWith(`${filename}-v`) && f.endsWith('.md')
+      );
+      if (versionedFile) {
+        actualPath = `${completedPath}/${versionedFile}`;
+      }
+    } catch (e) {
+      // Completed directory doesn't exist or is empty
+    }
+  }
+  
+  if (!actualPath) {
+    return null;
+  }
+  
+  // Parse the file
+  const metadata = await parseBacklogFile(actualPath);
+  const fileData = await readBacklogFile(actualPath);
+  
+  // Extract description from body
+  const descriptionMatch = fileData.body.match(/## Description\s+([\s\S]*?)(?=\n---|\n##|$)/);
+  const description = descriptionMatch ? descriptionMatch[1].trim() : '';
+  
+  return {
+    topic: metadata.topic,
+    priority: metadata.priority,
+    status: metadata.status,
+    version: metadata.version,
+    created: metadata.created,
+    agent: metadata.agent,
+    session: metadata.session,
+    description,
+    filepath: actualPath
+  };
+}
+
+/**
  * Handle listing backlog items with optional filters
  */
 export async function handleListBacklog(args: { status?: string; priority?: string }) {

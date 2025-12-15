@@ -8,13 +8,16 @@ import {
 import { unlinkSync, rmSync, mkdirSync } from 'fs';
 import { readFile, writeFile, access } from 'fs/promises';
 import {
-  handleListBacklog,
+  handleListBacklog as listBacklogItems,
   parseBacklogFile,
   generateBacklogFilename,
   createBacklogTemplate,
   amendBacklogTemplate,
   getNextVersion,
-  validateStatusTransition
+  validateStatusTransition,
+  getBacklogItem,
+  formatBacklogAge,
+  isBacklogStale
 } from '../lib/backlog-shared.js';
 import {
   readTodos,
@@ -48,7 +51,39 @@ function createContext() {
 
 // Backlog Read Handler
 async function handleBacklogRead(args: any) {
-  return await handleListBacklog(args);
+  const { topic, showAge = true } = args;
+  
+  // If topic is provided, fetch single item
+  if (topic) {
+    const item = await getBacklogItem(topic);
+    
+    if (!item) {
+      return `Backlog item not found: ${topic}`;
+    }
+    
+    // Return full item details including description
+    const result: any = {
+      topic: item.topic,
+      priority: item.priority,
+      status: item.status,
+      version: item.version,
+      created: item.created,
+      agent: item.agent,
+      session: item.session,
+      description: item.description,
+      filepath: item.filepath
+    };
+    
+    if (showAge) {
+      result.age = formatBacklogAge(item.created);
+      result.isStale = isBacklogStale(item.created);
+    }
+    
+    return JSON.stringify(result, null, 2);
+  }
+  
+  // Otherwise, list items
+  return await listBacklogItems(args);
 }
 
 // Backlog Write Handler
@@ -59,7 +94,7 @@ async function handleBacklogWrite(args: any, context: any) {
     case "create":
       return await handleCreate(args, context);
     case "list":
-      return await handleListBacklog(args);
+      return await listBacklogItems(args);
     case "amend":
       return await handleAmend(args, context);
     case "submit":
@@ -267,7 +302,7 @@ async function handleBacklogDone(args: any, context: any) {
     case "done":
       return await handleDone(args, context);
     case "list":
-      return await handleListBacklog(args);
+      return await listBacklogItems(args);
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -471,6 +506,10 @@ async function main() {
           inputSchema: {
             type: "object",
             properties: {
+              topic: {
+                type: "string",
+                description: "Topic name to fetch a single backlog item with full content",
+              },
               status: {
                 type: "string",
                 enum: ["new", "ready", "review", "done", "reopen", "wontfix"],
@@ -480,6 +519,10 @@ async function main() {
                 type: "string",
                 enum: ["high", "medium", "low"],
                 description: "Priority filter for list operation",
+              },
+              showAge: {
+                type: "boolean",
+                description: "Include age information (default: true)",
               },
             },
           },

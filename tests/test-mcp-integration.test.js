@@ -316,4 +316,120 @@ describe("MCP Server Integration Tests", () => {
     expect(response.result.isError).toBe(true);
     expect(response.result.content[0].text).toContain("Unknown tool");
   });
+
+  it("should fetch single backlog item by topic with full content", async () => {
+    // Create a backlog item first
+    await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 12,
+      method: "tools/call",
+      params: {
+        name: "backlog-write",
+        arguments: {
+          action: "create",
+          topic: "Fetch Test Item",
+          description: "This is a detailed description for testing single item fetch",
+          priority: "high",
+        },
+      },
+    });
+
+    // Fetch the item by topic
+    const request = {
+      jsonrpc: "2.0",
+      id: 13,
+      method: "tools/call",
+      params: {
+        name: "backlog-read",
+        arguments: {
+          topic: "Fetch Test Item",
+        },
+      },
+    };
+
+    const response = await sendMCPRequest(request);
+    
+    expect(response.result).toBeDefined();
+    expect(response.result.isError).not.toBe(true);
+    
+    const item = JSON.parse(response.result.content[0].text);
+    expect(item.topic).toBe("Fetch Test Item");
+    expect(item.priority).toBe("high");
+    expect(item.status).toBe("new");
+    expect(item.description).toContain("This is a detailed description for testing single item fetch");
+    expect(item.filepath).toBeDefined();
+    expect(item.created).toBeDefined();
+    expect(item.age).toBeDefined();
+  });
+
+  it("should return error for non-existent topic", async () => {
+    const request = {
+      jsonrpc: "2.0",
+      id: 14,
+      method: "tools/call",
+      params: {
+        name: "backlog-read",
+        arguments: {
+          topic: "Non Existent Item",
+        },
+      },
+    };
+
+    const response = await sendMCPRequest(request);
+    
+    expect(response.result).toBeDefined();
+    expect(response.result.content[0].text).toContain("not found");
+  });
+
+  it("should maintain list behavior when topic is not provided", async () => {
+    // Create multiple items
+    await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 15,
+      method: "tools/call",
+      params: {
+        name: "backlog-write",
+        arguments: {
+          action: "create",
+          topic: "List Test 1",
+          description: "First item",
+          priority: "high",
+        },
+      },
+    });
+
+    await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 16,
+      method: "tools/call",
+      params: {
+        name: "backlog-write",
+        arguments: {
+          action: "create",
+          topic: "List Test 2",
+          description: "Second item",
+          priority: "low",
+        },
+      },
+    });
+
+    // List without topic parameter
+    const request = {
+      jsonrpc: "2.0",
+      id: 17,
+      method: "tools/call",
+      params: {
+        name: "backlog-read",
+        arguments: {},
+      },
+    };
+
+    const response = await sendMCPRequest(request);
+    
+    expect(response.result).toBeDefined();
+    expect(response.result.isError).not.toBe(true);
+    const content = response.result.content[0].text;
+    expect(content).toContain("List Test 1");
+    expect(content).toContain("List Test 2");
+  });
 });

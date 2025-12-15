@@ -17943,6 +17943,53 @@ function parseFrontmatter(content) {
   const body = lines.slice(endIndex + 1).join("\n");
   return { frontmatter, body };
 }
+async function readBacklogFile(filepath) {
+  const content = await readFile(filepath, "utf8");
+  const parsed = parseFrontmatter(content);
+  if (parsed) {
+    return {
+      frontmatter: parsed.frontmatter,
+      body: parsed.body,
+      format: "frontmatter"
+    };
+  }
+  const frontmatter = await parseLegacyMetadata(content);
+  return {
+    frontmatter,
+    body: content,
+    format: "legacy"
+  };
+}
+async function parseLegacyMetadata(content) {
+  const lines = content.split("\n");
+  const frontmatter = {
+    topic: "",
+    priority: "medium",
+    status: "new",
+    version: 1,
+    created: "",
+    agent: "",
+    session: ""
+  };
+  for (const line of lines) {
+    if (line.startsWith("# Backlog: ")) {
+      frontmatter.topic = line.replace("# Backlog: ", "").trim();
+    } else if (line.startsWith("## Priority: ")) {
+      frontmatter.priority = line.replace("## Priority: ", "").trim();
+    } else if (line.startsWith("## Status: ")) {
+      frontmatter.status = line.replace("## Status: ", "").trim();
+    } else if (line.startsWith("## Version: ")) {
+      frontmatter.version = parseInt(line.replace("## Version: ", "").trim());
+    } else if (line.startsWith("- Date: ")) {
+      frontmatter.created = line.replace("- Date: ", "").trim();
+    } else if (line.startsWith("- Agent: ")) {
+      frontmatter.agent = line.replace("- Agent: ", "").trim();
+    } else if (line.startsWith("- Session: ")) {
+      frontmatter.session = line.replace("- Session: ", "").trim();
+    }
+  }
+  return frontmatter;
+}
 async function parseBacklogFile(filepath) {
   const content = await readFile(filepath, "utf8");
   const parsed = parseFrontmatter(content);
@@ -18036,6 +18083,49 @@ function getNextVersion(filename) {
     return 1;
   }
 }
+async function getBacklogItem(topic) {
+  const filename = generateBacklogFilename(topic);
+  const dirpath = getBacklogDir();
+  const completedPath = getCompletedBacklogDir();
+  const newStructurePath = `${dirpath}/${filename}/item.md`;
+  const legacyPath = `${dirpath}/${filename}.md`;
+  const completedPattern = `${completedPath}/${filename}`;
+  let actualPath = null;
+  if (await fileExists(newStructurePath)) {
+    actualPath = newStructurePath;
+  } else if (await fileExists(legacyPath)) {
+    actualPath = legacyPath;
+  } else {
+    try {
+      const completedFiles = readdirSync(completedPath);
+      const versionedFile = completedFiles.find(
+        (f) => f.startsWith(`${filename}-v`) && f.endsWith(".md")
+      );
+      if (versionedFile) {
+        actualPath = `${completedPath}/${versionedFile}`;
+      }
+    } catch (e) {
+    }
+  }
+  if (!actualPath) {
+    return null;
+  }
+  const metadata = await parseBacklogFile(actualPath);
+  const fileData = await readBacklogFile(actualPath);
+  const descriptionMatch = fileData.body.match(/## Description\s+([\s\S]*?)(?=\n---|\n##|$)/);
+  const description = descriptionMatch ? descriptionMatch[1].trim() : "";
+  return {
+    topic: metadata.topic,
+    priority: metadata.priority,
+    status: metadata.status,
+    version: metadata.version,
+    created: metadata.created,
+    agent: metadata.agent,
+    session: metadata.session,
+    description,
+    filepath: actualPath
+  };
+}
 async function handleListBacklog(args) {
   const { status, priority } = args;
   const items = await listBacklogItems(status, priority);
@@ -18127,6 +18217,34 @@ ${description}
 3. Reference: Use **backlog-read** tool to check completed items for examples
 `;
 }
+function calculateBacklogAge(createdTimestamp) {
+  if (!createdTimestamp) return 0;
+  const created = new Date(createdTimestamp);
+  const now = /* @__PURE__ */ new Date();
+  const diffMs = now.getTime() - created.getTime();
+  const diffDays = Math.floor(diffMs / (1e3 * 60 * 60 * 24));
+  return diffDays;
+}
+function isBacklogStale(createdTimestamp, staleDays = 30) {
+  const age = calculateBacklogAge(createdTimestamp);
+  return age >= staleDays;
+}
+function formatBacklogAge(createdTimestamp) {
+  const age = calculateBacklogAge(createdTimestamp);
+  if (age === 0) return "today";
+  if (age === 1) return "1 day ago";
+  if (age < 7) return `${age} days ago`;
+  if (age < 30) {
+    const weeks = Math.floor(age / 7);
+    return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`;
+  }
+  if (age < 365) {
+    const months = Math.floor(age / 30);
+    return months === 1 ? "1 month ago" : `${months} months ago`;
+  }
+  const years = Math.floor(age / 365);
+  return years === 1 ? "1 year ago" : `${years} years ago`;
+}
 
 // lib/backlog-todo-shared.ts
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
@@ -18205,6 +18323,29 @@ function createContext() {
   };
 }
 async function handleBacklogRead(args) {
+  const { topic, showAge = true } = args;
+  if (topic) {
+    const item = await getBacklogItem(topic);
+    if (!item) {
+      return `Backlog item not found: ${topic}`;
+    }
+    const result = {
+      topic: item.topic,
+      priority: item.priority,
+      status: item.status,
+      version: item.version,
+      created: item.created,
+      agent: item.agent,
+      session: item.session,
+      description: item.description,
+      filepath: item.filepath
+    };
+    if (showAge) {
+      result.age = formatBacklogAge(item.created);
+      result.isStale = isBacklogStale(item.created);
+    }
+    return JSON.stringify(result, null, 2);
+  }
   return await handleListBacklog(args);
 }
 async function handleBacklogWrite(args, context) {
@@ -18543,6 +18684,10 @@ async function main() {
           inputSchema: {
             type: "object",
             properties: {
+              topic: {
+                type: "string",
+                description: "Topic name to fetch a single backlog item with full content"
+              },
               status: {
                 type: "string",
                 enum: ["new", "ready", "review", "done", "reopen", "wontfix"],
@@ -18552,6 +18697,10 @@ async function main() {
                 type: "string",
                 enum: ["high", "medium", "low"],
                 description: "Priority filter for list operation"
+              },
+              showAge: {
+                type: "boolean",
+                description: "Include age information (default: true)"
               }
             }
           }

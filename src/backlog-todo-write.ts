@@ -4,7 +4,7 @@ import {
   readTodos,
   writeTodos,
   listTodos
-} from "../lib/backlog-todo-shared.js";
+} from "../lib/backlog-todo-shared";
 
 export default tool({
   description: "Write access to backlog todos - create and update todos for backlog items",

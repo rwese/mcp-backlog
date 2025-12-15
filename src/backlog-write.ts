@@ -1,7 +1,7 @@
 import { tool } from "@opencode-ai/plugin";
 import { renameSync } from 'fs';
 import { readFile, writeFile, access } from 'fs/promises';
-import { parseBacklogFile, listBacklogItems, getNextVersion, handleListBacklog, validateStatusTransition, generateBacklogFilename, createBacklogTemplate, amendBacklogTemplate, readBacklogFile, serializeFrontmatter, updateBacklogFrontmatter } from '../lib/backlog-shared.js';
+import { parseBacklogFile, listBacklogItems, getNextVersion, handleListBacklog, validateStatusTransition, generateBacklogFilename, createBacklogTemplate, amendBacklogTemplate, readBacklogFile, serializeFrontmatter, updateBacklogFrontmatter } from '../lib/backlog-shared';
 
 /**
  * Check if a file exists using fs/promises

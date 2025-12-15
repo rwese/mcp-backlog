@@ -1,6 +1,6 @@
 import { tool } from "@opencode-ai/plugin";
-import { listTodos } from "../lib/backlog-todo-shared.js";
-import { format } from "../lib/markdown-formatter.js";
+import { listTodos } from "../lib/backlog-todo-shared";
+import { format } from "../lib/markdown-formatter";
 
 export default tool({
   description: "Read-only access to backlog todos - list and filter todos for a backlog item",

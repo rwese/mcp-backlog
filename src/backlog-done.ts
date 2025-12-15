@@ -1,7 +1,7 @@
 import { tool } from "@opencode-ai/plugin";
 import { unlinkSync, rmSync } from 'fs';
 import { readFile, writeFile, access } from 'fs/promises';
-import { handleListBacklog } from '../lib/backlog-shared.js';
+import { handleListBacklog } from '../lib/backlog-shared';
 
 /**
  * Check if a file exists using fs/promises

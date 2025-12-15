@@ -1,6 +1,6 @@
 import { tool } from "@opencode-ai/plugin";
-import { listBacklogItems, formatBacklogAge, isBacklogStale } from '../lib/backlog-shared.js';
-import { format } from '../lib/markdown-formatter.js';
+import { listBacklogItems, formatBacklogAge, isBacklogStale } from '../lib/backlog-shared';
+import { format } from '../lib/markdown-formatter';
 
 export default tool({
   description: "Read-only access to backlog items - list and view backlog work items",

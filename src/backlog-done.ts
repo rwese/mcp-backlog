@@ -2,6 +2,7 @@ import { tool } from "@opencode-ai/plugin";
 import { unlinkSync, rmSync } from 'fs';
 import { readFile, writeFile, access } from 'fs/promises';
 import { handleListBacklog } from '../lib/backlog-shared';
+import { getBacklogDir, getCompletedBacklogDir, resolveBacklogPath } from '../lib/path-resolver';
 
 /**
  * Check if a file exists using fs/promises
@@ -28,8 +29,9 @@ async function handleDone(args, context) {
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
-  const filepath = `.agent/Backlog/${filename}/item.md`;
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const backlogDir = getBacklogDir();
+  const filepath = resolveBacklogPath('Backlog', filename, 'item.md');
+  const legacyPath = resolveBacklogPath('Backlog', `${filename}.md`);
 
    // Check both new and legacy paths
    let actualPath: string | null = null;
@@ -77,20 +79,21 @@ async function handleDone(args, context) {
   // Insert before workflow section
   content = content.replace(/\n---\n/, `${completionSection}\n---\n`);
 
-   // Write to COMPLETED_Backlog with appropriate prefix
-   const prefix = finalStatus === 'wontfix' ? 'WONTFIX' : 'DONE';
-   const completedPath = `.agent/COMPLETED_Backlog/${prefix}_${filename}.md`;
-   await writeFile(completedPath, content);
+    // Write to COMPLETED_Backlog with appropriate prefix
+    const prefix = finalStatus === 'wontfix' ? 'WONTFIX' : 'DONE';
+    const completedDir = getCompletedBacklogDir();
+    const completedPath = resolveBacklogPath('COMPLETED_Backlog', `${prefix}_${filename}.md`);
+    await writeFile(completedPath, content);
 
-  // Remove from Backlog - remove entire directory if using new structure, just file if legacy
-  if (actualPath === filepath) {
-    // New structure: remove entire directory
-    const dirpath = `.agent/Backlog/${filename}`;
-    rmSync(dirpath, { recursive: true, force: true });
-  } else {
-    // Legacy structure: remove just the file
-    unlinkSync(actualPath);
-  }
+   // Remove from Backlog - remove entire directory if using new structure, just file if legacy
+   if (actualPath === filepath) {
+     // New structure: remove entire directory
+     const dirpath = resolveBacklogPath('Backlog', filename);
+     rmSync(dirpath, { recursive: true, force: true });
+   } else {
+     // Legacy structure: remove just the file
+     unlinkSync(actualPath);
+   }
 
    const hint = finalStatus === 'wontfix' ? 'Item closed without completion' : 'Item archived. Workflow complete';
    return `Marked backlog item as ${finalStatus}: ${completedPath}${summary ? ' (with summary)' : ''}\n${hint}`;

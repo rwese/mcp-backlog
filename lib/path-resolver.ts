@@ -35,15 +35,7 @@ export function getBacklogRootDir(): string {
 
   // Use XDG-compliant directory by default
   const xdgDataHome = getXDGDataHome();
-  const backlogDir = join(xdgDataHome, 'mcp-backlog');
-
-  // If legacy .agent directory exists in CWD and XDG dir doesn't, use legacy
-  const legacyDir = join(process.cwd(), '.agent');
-  if (existsSync(legacyDir) && !existsSync(backlogDir)) {
-    return legacyDir;
-  }
-
-  return backlogDir;
+  return join(xdgDataHome, 'mcp-backlog');
 }
 
 /**
@@ -79,12 +71,6 @@ export function getProjectIdentifier(): string {
 export function getProjectBacklogDir(): string {
   const rootDir = getBacklogRootDir();
   const projectId = getProjectIdentifier();
-  
-  // If using legacy .agent dir, don't add project isolation
-  const legacyDir = join(process.cwd(), '.agent');
-  if (rootDir === legacyDir) {
-    return rootDir;
-  }
 
   return join(rootDir, 'projects', projectId);
 }

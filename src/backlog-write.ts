@@ -2,6 +2,7 @@ import { tool } from "@opencode-ai/plugin";
 import { renameSync } from 'fs';
 import { readFile, writeFile, access } from 'fs/promises';
 import { parseBacklogFile, listBacklogItems, getNextVersion, handleListBacklog, validateStatusTransition, generateBacklogFilename, createBacklogTemplate, amendBacklogTemplate, readBacklogFile, serializeFrontmatter, updateBacklogFrontmatter } from '../lib/backlog-shared';
+import { getBacklogDir, getCompletedBacklogDir, resolveBacklogPath } from '../lib/path-resolver';
 
 /**
  * Check if a file exists using fs/promises
@@ -25,13 +26,14 @@ async function handleCreate(args, context) {
   }
 
   const filename = generateBacklogFilename(topic);
-  const dirpath = `.agent/Backlog/${filename}`;
-  const filepath = `${dirpath}/item.md`;
+  const backlogDir = getBacklogDir();
+  const dirpath = resolveBacklogPath('Backlog', filename);
+  const filepath = resolveBacklogPath('Backlog', filename, 'item.md');
 
-   // Check for duplicate (both new and legacy structure)
-   const newExists = await fileExists(filepath);
-   const legacyPath = `.agent/Backlog/${filename}.md`;
-   const legacyExists = await fileExists(legacyPath);
+    // Check for duplicate (both new and legacy structure)
+    const newExists = await fileExists(filepath);
+    const legacyPath = resolveBacklogPath('Backlog', `${filename}.md`);
+    const legacyExists = await fileExists(legacyPath);
    
    if (newExists || legacyExists) {
      throw new Error(`Backlog item already exists. Use 'amend' to update it.`);
@@ -52,9 +54,10 @@ async function handleAmend(args, context) {
   }
 
   const filename = generateBacklogFilename(topic);
-  const dirpath = `.agent/Backlog/${filename}`;
-  const filepath = `${dirpath}/item.md`;
-  const legacyPath = `.agent/Backlog/${filename}.md`;
+  const backlogDir = getBacklogDir();
+  const dirpath = resolveBacklogPath('Backlog', filename);
+  const filepath = resolveBacklogPath('Backlog', filename, 'item.md');
+  const legacyPath = resolveBacklogPath('Backlog', `${filename}.md`);
 
    // Check both new and legacy paths
    let actualPath = filepath;
@@ -83,9 +86,10 @@ async function handleAmend(args, context) {
 
   const nextVersion = getNextVersion(filename);
 
-   // Move current version to archive
-   const archivePath = `.agent/COMPLETED_Backlog/${filename}-v${nextVersion}.md`;
-   renameSync(actualPath, archivePath);
+    // Move current version to archive
+    const completedDir = getCompletedBacklogDir();
+    const archivePath = resolveBacklogPath('COMPLETED_Backlog', `${filename}-v${nextVersion}.md`);
+    renameSync(actualPath, archivePath);
 
    // Create new version (always use new structure)
    const newContent = amendBacklogTemplate(
@@ -120,8 +124,8 @@ async function handleSubmit(args, context) {
     }
 
     const filename = generateBacklogFilename(topic);
-    const filepath = `.agent/Backlog/${filename}/item.md`;
-    const legacyPath = `.agent/Backlog/${filename}.md`;
+    const filepath = resolveBacklogPath('Backlog', filename, 'item.md');
+    const legacyPath = resolveBacklogPath('Backlog', `${filename}.md`);
 
     // Check both paths
     const newExists = await fileExists(filepath);
@@ -153,8 +157,8 @@ async function handleApprove(args, context) {
     }
 
     const filename = generateBacklogFilename(topic);
-    const filepath = `.agent/Backlog/${filename}/item.md`;
-    const legacyPath = `.agent/Backlog/${filename}.md`;
+    const filepath = resolveBacklogPath('Backlog', filename, 'item.md');
+    const legacyPath = resolveBacklogPath('Backlog', `${filename}.md`);
 
     // Check both paths
     const newExists = await fileExists(filepath);
@@ -186,8 +190,8 @@ async function handleReopen(args, context) {
     }
 
     const filename = generateBacklogFilename(topic);
-    const filepath = `.agent/Backlog/${filename}/item.md`;
-    const legacyPath = `.agent/Backlog/${filename}.md`;
+    const filepath = resolveBacklogPath('Backlog', filename, 'item.md');
+    const legacyPath = resolveBacklogPath('Backlog', `${filename}.md`);
 
     // Check both paths
     const newExists = await fileExists(filepath);
@@ -223,8 +227,8 @@ async function handleWontfix(args, context) {
     }
 
     const filename = generateBacklogFilename(topic);
-    const filepath = `.agent/Backlog/${filename}/item.md`;
-    const legacyPath = `.agent/Backlog/${filename}.md`;
+    const filepath = resolveBacklogPath('Backlog', filename, 'item.md');
+    const legacyPath = resolveBacklogPath('Backlog', `${filename}.md`);
 
     // Check both paths
     const newExists = await fileExists(filepath);

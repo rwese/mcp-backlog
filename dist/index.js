@@ -18679,7 +18679,7 @@ async function main() {
     return {
       tools: [
         {
-          name: "backlog-read",
+          name: "read",
           description: "Read-only access to backlog items - list and view backlog work items",
           inputSchema: {
             type: "object",
@@ -18706,7 +18706,7 @@ async function main() {
           }
         },
         {
-          name: "backlog-write",
+          name: "write",
           description: "Write access to backlog management - create, amend, and list backlog work items",
           inputSchema: {
             type: "object",
@@ -18738,7 +18738,7 @@ async function main() {
           }
         },
         {
-          name: "backlog-done",
+          name: "done",
           description: "Mark backlog items as complete with optional summary - done operation and list",
           inputSchema: {
             type: "object",
@@ -18770,7 +18770,7 @@ async function main() {
           }
         },
         {
-          name: "backlog-todo-read",
+          name: "todo-read",
           description: "Read-only access to backlog todos - list and filter todos for a backlog item",
           inputSchema: {
             type: "object",
@@ -18793,7 +18793,7 @@ async function main() {
           }
         },
         {
-          name: "backlog-todo-write",
+          name: "todo-write",
           description: "Write access to backlog todos - create and update todos for backlog items",
           inputSchema: {
             type: "object",
@@ -18834,7 +18834,7 @@ async function main() {
           }
         },
         {
-          name: "backlog-todo-done",
+          name: "todo-done",
           description: "Mark backlog todos as complete with dependency validation",
           inputSchema: {
             type: "object",
@@ -18873,22 +18873,22 @@ async function main() {
     try {
       let result;
       switch (request.params.name) {
-        case "backlog-read":
+        case "read":
           result = await handleBacklogRead(request.params.arguments);
           break;
-        case "backlog-write":
+        case "write":
           result = await handleBacklogWrite(request.params.arguments, context);
           break;
-        case "backlog-done":
+        case "done":
           result = await handleBacklogDone(request.params.arguments, context);
           break;
-        case "backlog-todo-read":
+        case "todo-read":
           result = await handleBacklogTodoRead(request.params.arguments);
           break;
-        case "backlog-todo-write":
+        case "todo-write":
           result = await handleBacklogTodoWrite(request.params.arguments);
           break;
-        case "backlog-todo-done":
+        case "todo-done":
           result = await handleBacklogTodoDone(request.params.arguments);
           break;
         default:

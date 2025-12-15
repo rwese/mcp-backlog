@@ -18308,6 +18308,7 @@ function validateDependencies(todos, todoId) {
 }
 
 // src/index.ts
+var VERSION = "1.1.0";
 async function fileExists2(path) {
   try {
     await access2(path);
@@ -18663,11 +18664,123 @@ async function handleBacklogTodoDone(args) {
       throw new Error(`Unknown action: ${action}`);
   }
 }
+function showHelp() {
+  console.log(`
+MCP Backlog Server v${VERSION}
+A Model Context Protocol server for managing backlog items and todos
+
+USAGE:
+  mcp-backlog [COMMAND]
+
+COMMANDS:
+  (no command)    Start MCP server on stdio (default)
+  help, --help    Show this help message
+  info, --info    Show configuration and paths
+  version, -v     Show version information
+  list            List all backlog items
+
+TOOLS AVAILABLE VIA MCP:
+  
+Backlog Management:
+  \u2022 read          - List backlog items or fetch single item with full content
+  \u2022 write         - Create, amend, submit, approve, reopen, or wontfix items
+  \u2022 done          - Mark items complete with optional summary
+
+Todo Management:
+  \u2022 todo-read     - List and filter todos for a backlog item
+  \u2022 todo-write    - Create and update todos for backlog items
+  \u2022 todo-done     - Mark todos complete with dependency validation
+
+STATUSES:
+  new      \u2192 Item created, not yet ready for work
+  ready    \u2192 Ready for work (via submit action)
+  review   \u2192 Under review
+  done     \u2192 Completed (via approve action)
+  reopen   \u2192 Reopened after review
+  wontfix  \u2192 Will not be implemented
+
+PRIORITIES: high, medium, low
+
+EXAMPLES:
+  mcp-backlog help
+  mcp-backlog info
+  mcp-backlog list
+
+For detailed documentation, visit:
+  https://github.com/rwese/mcp-backlog
+`);
+}
+function showInfo() {
+  console.log(`
+MCP Backlog Server v${VERSION}
+
+CONFIGURATION:
+  Backlog Directory:   ${getBacklogDir()}
+  Completed Directory: ${getCompletedBacklogDir()}
+
+IMPLEMENTATION STATUS:
+  \u2713 Backlog item CRUD operations
+  \u2713 Status workflow (new \u2192 ready \u2192 review \u2192 done)
+  \u2713 Priority management (high/medium/low)
+  \u2713 Todo management with dependencies
+  \u2713 Batch grouping for sub-agent workflows
+  \u2713 XDG Base Directory support
+  \u2713 Legacy format migration support
+  \u2713 Completion summaries
+  \u2713 Age tracking and staleness detection
+
+WORKFLOW:
+  1. Create backlog item (write action=create)
+  2. Add todos if needed (todo-write action=create)
+  3. Submit for work (write action=submit) \u2192 status: ready
+  4. Complete work and set to review (write action=amend status=review)
+  5. Approve completion (write action=approve) \u2192 status: done
+  6. Mark as done (done action=done)
+
+ENVIRONMENT:
+  Node.js: ${process.version}
+  Platform: ${process.platform}
+  Architecture: ${process.arch}
+`);
+}
+async function showList() {
+  try {
+    const items = await handleListBacklog({});
+    console.log("\nBACKLOG ITEMS:\n");
+    console.log(items);
+  } catch (error2) {
+    console.error("Error listing backlog items:", error2.message);
+    process.exit(1);
+  }
+}
 async function main() {
+  const args = process.argv.slice(2);
+  const command = args[0];
+  if (command === "help" || command === "--help" || command === "-h") {
+    showHelp();
+    process.exit(0);
+  }
+  if (command === "info" || command === "--info") {
+    showInfo();
+    process.exit(0);
+  }
+  if (command === "version" || command === "--version" || command === "-v") {
+    console.log(`mcp-backlog v${VERSION}`);
+    process.exit(0);
+  }
+  if (command === "list" || command === "--list") {
+    await showList();
+    process.exit(0);
+  }
+  if (command && !command.startsWith("-")) {
+    console.error(`Unknown command: ${command}`);
+    console.error('Run "mcp-backlog help" for usage information');
+    process.exit(1);
+  }
   const server = new Server(
     {
       name: "mcp-backlog",
-      version: "1.0.0"
+      version: VERSION
     },
     {
       capabilities: {

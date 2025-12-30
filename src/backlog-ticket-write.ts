@@ -4,7 +4,7 @@ import {
   readTodos,
   writeTodos,
   listTodos
-} from "../lib/backlog-todo-shared";
+} from "../lib/backlog-ticket-shared";
 
 export default tool({
   description: "Write access to backlog todos - create and update todos for backlog items",

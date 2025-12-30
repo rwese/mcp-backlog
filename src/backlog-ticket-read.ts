@@ -1,5 +1,5 @@
 import { tool } from "@opencode-ai/plugin";
-import { listTodos } from "../lib/backlog-todo-shared";
+import { listTodos } from "../lib/backlog-ticket-shared";
 import { format } from "../lib/markdown-formatter";
 
 export default tool({

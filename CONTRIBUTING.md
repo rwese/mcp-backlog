@@ -15,7 +15,7 @@ mcp-backlog/
 │   └── backlog-*.ts  # Original tool files (for reference)
 ├── lib/              # Shared libraries
 │   ├── backlog-shared.ts
-│   ├── backlog-todo-shared.ts
+│   ├── backlog-ticket-shared.ts
 │   └── markdown-formatter.ts
 ├── tests/            # Test files
 └── dist/             # Built output

@@ -20,6 +20,7 @@ Add this to your MCP client configuration (e.g., Claude Desktop, Cline, etc.):
 ```
 
 **Benefits:**
+
 - ✅ No installation required
 - ✅ Always uses latest version
 - ✅ Works across any machine
@@ -28,11 +29,13 @@ Add this to your MCP client configuration (e.g., Claude Desktop, Cline, etc.):
 ### Configuration File Locations
 
 **Claude Desktop (macOS):**
+
 ```
 ~/Library/Application Support/Claude/claude_desktop_config.json
 ```
 
 **Claude Desktop (Windows):**
+
 ```
 %APPDATA%\Claude\claude_desktop_config.json
 ```
@@ -49,6 +52,7 @@ npm install -g @rwese/mcp-backlog
 ```
 
 Then configure:
+
 ```json
 {
   "mcpServers": {
@@ -71,6 +75,7 @@ bun run build
 ```
 
 Then configure:
+
 ```json
 {
   "mcpServers": {
@@ -107,11 +112,11 @@ Then configure:
 }
 ```
 
-### Add a Todo to a Backlog Item
+### Add a Ticket to a Backlog Item
 
 ```json
 {
-  "tool": "backlog-todo-write",
+  "tool": "ticket-write",
   "arguments": {
     "action": "create",
     "topic": "Implement User Authentication",
@@ -120,11 +125,11 @@ Then configure:
 }
 ```
 
-### Mark a Todo as Done
+### Mark a Ticket as Done
 
 ```json
 {
-  "tool": "backlog-todo-done",
+  "tool": "ticket-done",
   "arguments": {
     "action": "done",
     "topic": "Implement User Authentication",
@@ -171,16 +176,19 @@ The server creates a `.agent/` directory in your current working directory:
 ## Troubleshooting
 
 ### Server won't start
+
 - Make sure you've run `bun run build`
 - Check that the path in your MCP config is correct
 - Verify Node.js is installed
 
 ### Can't create backlog items
+
 - The server creates files in the current working directory
 - Make sure you have write permissions
 - The `.agent/` directory will be created automatically
 
 ### Dependencies
+
 - Node.js (v18 or higher recommended)
 - Or Bun runtime
 

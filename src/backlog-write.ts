@@ -43,7 +43,7 @@ async function handleCreate(args, context) {
 
     // Create directory structure
     await writeFile(filepath, content);
-   return `Created backlog item: ${filepath}\nNext: Use backlog-todo-write to add todos, then submit when ready`;
+   return `Created backlog item: ${filepath}\nNext: Use backlog-ticket-write to add tickets, then submit when ready`;
 }
 
 async function handleAmend(args, context) {

@@ -23,7 +23,10 @@
      "test": "bun test",
      "show-paths": "bun scripts/show-paths.js",
      "prepare": "bash scripts/install-hooks.sh",
-     "prepublishOnly": "bun run build"
+     "prepublishOnly": "bun run build",
+     "version:patch": "bash scripts/version.sh patch",
+     "version:minor": "bash scripts/version.sh minor",
+     "version:major": "bash scripts/version.sh major"
    },
   "keywords": [
     "mcp",

@@ -39,15 +39,17 @@ describe("Build Validation", () => {
       expect(getDistContent()).toContain("handleBacklogDone");
     });
 
-    it("should contain handleBacklogTodoRead function", () => {
+    it("should contain handleBacklogTodoRead function (internal name)", () => {
+      // Note: Internal function names kept as "Todo" for backward compatibility
+      // External MCP tool names are "ticket-read", "ticket-write", "ticket-done"
       expect(getDistContent()).toContain("handleBacklogTodoRead");
     });
 
-    it("should contain handleBacklogTodoWrite function", () => {
+    it("should contain handleBacklogTodoWrite function (internal name)", () => {
       expect(getDistContent()).toContain("handleBacklogTodoWrite");
     });
 
-    it("should contain handleBacklogTodoDone function", () => {
+    it("should contain handleBacklogTodoDone function (internal name)", () => {
       expect(getDistContent()).toContain("handleBacklogTodoDone");
     });
 
@@ -120,9 +122,9 @@ describe("Build Validation", () => {
       expect(content).toContain('"read"');
       expect(content).toContain('"write"');
       expect(content).toContain('"done"');
-      expect(content).toContain('"todo-read"');
-      expect(content).toContain('"todo-write"');
-      expect(content).toContain('"todo-done"');
+      expect(content).toContain('"ticket-read"');
+      expect(content).toContain('"ticket-write"');
+      expect(content).toContain('"ticket-done"');
     });
 
     it("should handle tool execution with switch cases", () => {
@@ -130,9 +132,9 @@ describe("Build Validation", () => {
       expect(content).toMatch(/case\s+["']read["']/);
       expect(content).toMatch(/case\s+["']write["']/);
       expect(content).toMatch(/case\s+["']done["']/);
-      expect(content).toMatch(/case\s+["']todo-read["']/);
-      expect(content).toMatch(/case\s+["']todo-write["']/);
-      expect(content).toMatch(/case\s+["']todo-done["']/);
+      expect(content).toMatch(/case\s+["']ticket-read["']/);
+      expect(content).toMatch(/case\s+["']ticket-write["']/);
+      expect(content).toMatch(/case\s+["']ticket-done["']/);
     });
   });
 

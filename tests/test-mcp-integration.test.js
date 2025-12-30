@@ -123,9 +123,9 @@ describe("MCP Server Integration Tests", () => {
     expect(toolNames).toContain("read");
     expect(toolNames).toContain("write");
     expect(toolNames).toContain("done");
-    expect(toolNames).toContain("todo-read");
-    expect(toolNames).toContain("todo-write");
-    expect(toolNames).toContain("todo-done");
+    expect(toolNames).toContain("ticket-read");
+    expect(toolNames).toContain("ticket-write");
+    expect(toolNames).toContain("ticket-done");
   });
 
   it("should execute backlog-read (list) without errors", async () => {
@@ -225,7 +225,7 @@ describe("MCP Server Integration Tests", () => {
     expect(content).toContain("Test List Item");
   });
 
-  it("should handle backlog-todo operations", async () => {
+  it("should handle backlog-ticket operations", async () => {
     // Create a backlog item first
     await sendMCPRequest({
       jsonrpc: "2.0",
@@ -235,23 +235,23 @@ describe("MCP Server Integration Tests", () => {
         name: "write",
         arguments: {
           action: "create",
-          topic: "Todo Test Item",
-          description: "Item for testing todos",
+          topic: "Ticket Test Item",
+          description: "Item for testing tickets",
         },
       },
     });
 
-    // Create a todo
+    // Create a ticket
     const createRequest = {
       jsonrpc: "2.0",
       id: 8,
       method: "tools/call",
       params: {
-        name: "todo-write",
+        name: "ticket-write",
         arguments: {
           action: "create",
-          topic: "Todo Test Item",
-          content: "Test todo task",
+          topic: "Ticket Test Item",
+          content: "Test ticket task",
         },
       },
     };
@@ -260,24 +260,24 @@ describe("MCP Server Integration Tests", () => {
     expect(createResponse.result.isError).not.toBe(true);
     expect(createResponse.result.content[0].text).toContain("Created todo");
 
-    // List todos
+    // List tickets
     const listRequest = {
       jsonrpc: "2.0",
       id: 9,
       method: "tools/call",
       params: {
-        name: "todo-read",
+        name: "ticket-read",
         arguments: {
-          topic: "Todo Test Item",
+          topic: "Ticket Test Item",
         },
       },
     };
 
     const listResponse = await sendMCPRequest(listRequest);
     expect(listResponse.result.isError).not.toBe(true);
-    const todos = JSON.parse(listResponse.result.content[0].text);
-    expect(todos).toBeArray();
-    expect(todos.length).toBeGreaterThan(0);
+    const tickets = JSON.parse(listResponse.result.content[0].text);
+    expect(tickets).toBeArray();
+    expect(tickets.length).toBeGreaterThan(0);
   });
 
   it("should return error for missing required parameters", async () => {

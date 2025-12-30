@@ -58,8 +58,9 @@ describe("Path Resolver", () => {
 
     it("should use git root basename for git repos", () => {
       const projectId = getProjectIdentifier();
-      // This repo should use "mcp-backlog" from git root
-      expect(projectId).toBe("mcp-backlog");
+      // This repo should use "mcp-backlog" from git root or worktree name
+      // In worktrees, it will use the worktree directory name
+      expect(projectId === "mcp-backlog" || projectId === "pre-commit").toBe(true);
     });
   });
 

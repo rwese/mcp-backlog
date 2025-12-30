@@ -24,7 +24,7 @@ import {
   writeTodos,
   listTodos,
   validateDependencies
-} from '../lib/backlog-todo-shared.js';
+} from '../lib/backlog-ticket-shared.js';
 import { getBacklogDir, getCompletedBacklogDir } from '../lib/path-resolver.js';
 
 const VERSION = "1.1.0";
@@ -507,10 +507,10 @@ Backlog Management:
   • write         - Create, amend, submit, approve, reopen, or wontfix items
   • done          - Mark items complete with optional summary
 
-Todo Management:
-  • todo-read     - List and filter todos for a backlog item
-  • todo-write    - Create and update todos for backlog items
-  • todo-done     - Mark todos complete with dependency validation
+Ticket Management:
+  • ticket-read   - List and filter tickets for a backlog item
+  • ticket-write  - Create and update tickets for backlog items
+  • ticket-done   - Mark tickets complete with dependency validation
 
 STATUSES:
   new      → Item created, not yet ready for work
@@ -544,7 +544,7 @@ IMPLEMENTATION STATUS:
   ✓ Backlog item CRUD operations
   ✓ Status workflow (new → ready → review → done)
   ✓ Priority management (high/medium/low)
-  ✓ Todo management with dependencies
+  ✓ Ticket management with dependencies
   ✓ Batch grouping for sub-agent workflows
   ✓ XDG Base Directory support
   ✓ Legacy format migration support
@@ -553,7 +553,7 @@ IMPLEMENTATION STATUS:
 
 WORKFLOW:
   1. Create backlog item (write action=create)
-  2. Add todos if needed (todo-write action=create)
+  2. Add tickets if needed (ticket-write action=create)
   3. Submit for work (write action=submit) → status: ready
   4. Complete work and set to review (write action=amend status=review)
   5. Approve completion (write action=approve) → status: done
@@ -718,8 +718,8 @@ async function main() {
           },
         },
         {
-          name: "todo-read",
-          description: "Read-only access to backlog todos - list and filter todos for a backlog item",
+          name: "ticket-read",
+          description: "Read-only access to backlog tickets - list and filter tickets for a backlog item",
           inputSchema: {
             type: "object",
             properties: {
@@ -741,8 +741,8 @@ async function main() {
           },
         },
         {
-          name: "todo-write",
-          description: "Write access to backlog todos - create and update todos for backlog items",
+          name: "ticket-write",
+          description: "Write access to backlog tickets - create and update tickets for backlog items",
           inputSchema: {
             type: "object",
             properties: {
@@ -757,21 +757,21 @@ async function main() {
               },
               todoId: {
                 type: "string",
-                description: "Todo ID (required for update)",
+                description: "Ticket ID (required for update)",
               },
               content: {
                 type: "string",
-                description: "Todo content",
+                description: "Ticket content",
               },
               status: {
                 type: "string",
                 enum: ["pending", "in_progress", "completed", "cancelled"],
-                description: "Todo status",
+                description: "Ticket status",
               },
               dependencies: {
                 type: "array",
                 items: { type: "string" },
-                description: "Todo dependencies (array of todo IDs)",
+                description: "Ticket dependencies (array of ticket IDs)",
               },
               batch: {
                 type: "string",
@@ -782,8 +782,8 @@ async function main() {
           },
         },
         {
-          name: "todo-done",
-          description: "Mark backlog todos as complete with dependency validation",
+          name: "ticket-done",
+          description: "Mark backlog tickets as complete with dependency validation",
           inputSchema: {
             type: "object",
             properties: {
@@ -798,7 +798,7 @@ async function main() {
               },
               todoId: {
                 type: "string",
-                description: "Todo ID (required for done)",
+                description: "Ticket ID (required for done)",
               },
               status: {
                 type: "string",
@@ -834,13 +834,13 @@ async function main() {
         case "done":
           result = await handleBacklogDone(request.params.arguments, context);
           break;
-        case "todo-read":
+        case "ticket-read":
           result = await handleBacklogTodoRead(request.params.arguments);
           break;
-        case "todo-write":
+        case "ticket-write":
           result = await handleBacklogTodoWrite(request.params.arguments);
           break;
-        case "todo-done":
+        case "ticket-done":
           result = await handleBacklogTodoDone(request.params.arguments);
           break;
         default:

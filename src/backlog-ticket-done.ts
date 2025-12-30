@@ -4,7 +4,7 @@ import {
   updateTodoStatus, 
   validateDependencies,
   listTodos 
-} from "../lib/backlog-todo-shared";
+} from "../lib/backlog-ticket-shared";
 
 export default tool({
   description: "Mark backlog todos as complete with dependency validation",

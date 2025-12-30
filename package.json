@@ -22,6 +22,7 @@
      "dev": "bun run src/index.ts",
      "test": "bun test",
      "show-paths": "bun scripts/show-paths.js",
+     "prepare": "bash scripts/install-hooks.sh",
      "prepublishOnly": "bun run build"
    },
   "keywords": [

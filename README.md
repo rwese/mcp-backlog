@@ -16,11 +16,13 @@ A Model Context Protocol (MCP) server for managing backlog items and todos. This
 ### Quick Start (Zero Install)
 
 **Using NPX (Node.js):**
+
 ```bash
 npx -y github:rwese/mcp-backlog
 ```
 
 **Using Bunx (Bun - Faster):**
+
 ```bash
 bunx --bun github:rwese/mcp-backlog
 ```
@@ -28,6 +30,7 @@ bunx --bun github:rwese/mcp-backlog
 ### Global Installation
 
 **With Bun (Recommended):**
+
 ```bash
 # From GitHub (latest)
 bun add -g github:rwese/mcp-backlog
@@ -37,6 +40,7 @@ bun add -g @rwese/mcp-backlog
 ```
 
 **With NPM:**
+
 ```bash
 # From GitHub
 npm install -g github:rwese/mcp-backlog
@@ -61,6 +65,7 @@ bun run build  # or npm run build
 Add to your MCP client's configuration file:
 
 **Using NPX from GitHub (Recommended):**
+
 ```json
 {
   "mcpServers": {
@@ -73,6 +78,7 @@ Add to your MCP client's configuration file:
 ```
 
 **Using Bunx (Faster):**
+
 ```json
 {
   "mcpServers": {
@@ -85,6 +91,7 @@ Add to your MCP client's configuration file:
 ```
 
 **Using global install:**
+
 ```json
 {
   "mcpServers": {
@@ -96,6 +103,7 @@ Add to your MCP client's configuration file:
 ```
 
 **Using NPX:**
+
 ```json
 {
   "mcpServers": {
@@ -108,6 +116,7 @@ Add to your MCP client's configuration file:
 ```
 
 **Using local build:**
+
 ```json
 {
   "mcpServers": {
@@ -122,16 +131,20 @@ Add to your MCP client's configuration file:
 ## Tools
 
 ### backlog-read
+
 List and filter backlog items.
 
 **Arguments:**
+
 - `status` (optional): Filter by status (new, ready, review, done, reopen, wontfix)
 - `priority` (optional): Filter by priority (high, medium, low)
 
 ### backlog-write
+
 Create and manage backlog items.
 
 **Arguments:**
+
 - `action`: Operation to perform (create, list, amend, approve, submit, reopen, wontfix)
 - `topic`: Topic name for the backlog item
 - `description`: Description of the work item
@@ -139,6 +152,7 @@ Create and manage backlog items.
 - `status` (optional): Status for amend operation
 
 **Examples:**
+
 ```javascript
 // Create a new backlog item
 {
@@ -157,25 +171,31 @@ Create and manage backlog items.
 ```
 
 ### backlog-done
+
 Mark backlog items as complete.
 
 **Arguments:**
+
 - `action`: done or list
 - `topic`: Topic name to mark as done
 - `summary` (optional): Completion summary
 
-### backlog-todo-read
+### ticket-read
+
 List todos for a backlog item.
 
 **Arguments:**
+
 - `topic`: Backlog item topic (required)
 - `status` (optional): Filter by status
 - `batch` (optional): Filter by batch
 
-### backlog-todo-write
+### ticket-write
+
 Create and update todos within backlog items.
 
 **Arguments:**
+
 - `action`: create, update, or list
 - `topic`: Backlog item topic (required)
 - `todoId`: Todo ID (for update)
@@ -184,10 +204,12 @@ Create and update todos within backlog items.
 - `dependencies`: Array of todo IDs that must complete first
 - `batch`: Batch identifier
 
-### backlog-todo-done
+### ticket-done
+
 Mark todos as complete with dependency validation.
 
 **Arguments:**
+
 - `action`: done or list
 - `topic`: Backlog item topic (required)
 - `todoId`: Todo ID to mark as done
@@ -214,6 +236,7 @@ By default, the server stores backlog data in XDG-compliant directories with mul
 ### Multi-Project Support
 
 Each project gets its own isolated directory:
+
 - **Git repositories**: Uses the repository root directory name as project identifier
 - **Non-git projects**: Uses directory name + hash for uniqueness
 
@@ -228,17 +251,20 @@ For backward compatibility, if you have an existing `.agent/` directory in your 
 You can override the default location using environment variables:
 
 **Option 1: Set a custom backlog directory**
+
 ```bash
 export MCP_BACKLOG_DIR="/path/to/your/backlog"
 ```
 
 **Option 2: Set XDG_DATA_HOME (affects all XDG-compliant apps)**
+
 ```bash
 export XDG_DATA_HOME="/path/to/data"
 # Backlog will be stored at: /path/to/data/mcp-backlog/
 ```
 
 Add these to your MCP client configuration:
+
 ```json
 {
   "mcpServers": {
@@ -255,6 +281,7 @@ Add these to your MCP client configuration:
 ## Configuration
 
 See [CONFIGURATION.md](./CONFIGURATION.md) for detailed information about:
+
 - XDG Base Directory support
 - Multi-project isolation
 - Environment variables
@@ -264,11 +291,13 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for detailed information about:
 ## Development
 
 ### Run tests
+
 ```bash
 bun test
 ```
 
 ### Build
+
 ```bash
 bun run build
 ```

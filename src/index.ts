@@ -29,7 +29,7 @@ import {
 } from '../lib/backlog-ticket-shared.js';
 import { getBacklogDir, getCompletedBacklogDir } from '../lib/path-resolver.js';
 
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 
 /**
  * Check if a file exists using fs/promises

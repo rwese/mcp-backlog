@@ -23,7 +23,9 @@ import {
   readTodos,
   writeTodos,
   listTodos,
-  validateDependencies
+  validateDependencies,
+  generateReadableId,
+  generateSessionId
 } from '../lib/backlog-ticket-shared.js';
 import { getBacklogDir, getCompletedBacklogDir } from '../lib/path-resolver.js';
 
@@ -47,7 +49,7 @@ async function fileExists(path: string): Promise<boolean> {
 function createContext() {
   return {
     agent: "mcp-backlog",
-    sessionID: crypto.randomUUID(),
+    sessionID: generateSessionId(),
   };
 }
 
@@ -401,14 +403,14 @@ async function handleBacklogTodoWrite(args: any) {
       
       const data = readTodos(topic);
       const newTodo = {
-        id: crypto.randomUUID(),
+        id: generateReadableId(),
         content,
         status: status || "pending",
         dependencies: dependencies || [],
         batch: batch || null,
         created: new Date().toISOString(),
         agent: "mcp-backlog",
-        session: crypto.randomUUID(),
+        session: generateSessionId(),
       };
       
       data.todos.push(newTodo);

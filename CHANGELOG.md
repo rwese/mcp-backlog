@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-01-03
+
+### Added
+
+- **Prune Tool**: New `prune` MCP tool to manage completed/archived backlog items
+  - `list` action: View all completed items with their age
+  - `prune` action: Delete items older than specified days (default: 30)
+  - `clear` action: Delete all completed items
+  - `dryRun` option: Preview deletions without actually removing files
+  - `olderThanDays` parameter: Customize the age threshold for pruning
+
+### Changed
+
+- Updated help text and info output to include prune tool
+- Added prune/clear capability to implementation status
+
 ## [1.2.0] - 2024-12-30
 
 ### Breaking Changes
@@ -110,6 +126,7 @@ The backlog data format remains unchanged - only the MCP tool interface names ch
 
 See [RELEASE_NOTES_v1.1.0.md](./RELEASE_NOTES_v1.1.0.md) for detailed migration instructions.
 
+[1.3.0]: https://github.com/rwese/mcp-backlog/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/rwese/mcp-backlog/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/rwese/mcp-backlog/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/rwese/mcp-backlog/releases/tag/v1.0.0

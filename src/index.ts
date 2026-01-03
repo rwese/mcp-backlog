@@ -366,6 +366,7 @@ async function handleDone(args: any, context: any) {
 
    const prefix = finalStatus === 'wontfix' ? 'WONTFIX' : 'DONE';
    const completedDir = getCompletedBacklogDir();
+   mkdirSync(completedDir, { recursive: true });
    const completedPath = `${completedDir}/${prefix}_${filename}.md`;
    await writeFile(completedPath, content, 'utf8');
 
@@ -443,6 +444,156 @@ async function handleBacklogTodoWrite(args: any) {
   }
 }
 
+// Backlog Prune Handler
+async function handleBacklogPrune(args: any) {
+  const { readdirSync, unlinkSync, statSync } = await import('fs');
+  const { join } = await import('path');
+  
+  const action = args.action || "list";
+  const olderThanDays = args.olderThanDays ?? 30;
+  const dryRun = args.dryRun ?? false;
+  
+  const completedDir = getCompletedBacklogDir();
+  
+  // Helper to get file age in days
+  function getFileAgeDays(filepath: string): number {
+    const stats = statSync(filepath);
+    const now = new Date();
+    const mtime = new Date(stats.mtime);
+    const diffMs = now.getTime() - mtime.getTime();
+    return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  }
+  
+  // List all completed items
+  function listCompletedItems(): { filepath: string; filename: string; ageDays: number }[] {
+    try {
+      const files = readdirSync(completedDir);
+      return files
+        .filter((f: string) => f.endsWith('.md'))
+        .map((filename: string) => {
+          const filepath = join(completedDir, filename);
+          return {
+            filepath,
+            filename,
+            ageDays: getFileAgeDays(filepath),
+          };
+        });
+    } catch (error: any) {
+      if (error.code === 'ENOENT') {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  switch (action) {
+    case "list": {
+      const items = listCompletedItems();
+      if (items.length === 0) {
+        return "No completed backlog items found.";
+      }
+      
+      const lines = items
+        .sort((a, b) => b.ageDays - a.ageDays)
+        .map(item => `- ${item.filename} (${item.ageDays} days old)`);
+      
+      return `Completed backlog items (${items.length} total):\n${lines.join('\n')}`;
+    }
+
+    case "prune": {
+      const items = listCompletedItems();
+      const deleted: string[] = [];
+      const kept: string[] = [];
+      const errors: string[] = [];
+      
+      for (const item of items) {
+        if (item.ageDays >= olderThanDays) {
+          if (dryRun) {
+            deleted.push(`${item.filename} (${item.ageDays} days old) [dry-run]`);
+          } else {
+            try {
+              unlinkSync(item.filepath);
+              deleted.push(`${item.filename} (${item.ageDays} days old)`);
+            } catch (error: any) {
+              errors.push(`Failed to delete ${item.filename}: ${error.message}`);
+            }
+          }
+        } else {
+          kept.push(`${item.filename} (${item.ageDays} days old)`);
+        }
+      }
+      
+      const lines: string[] = [];
+      const prefix = dryRun ? "[DRY-RUN] " : "";
+      
+      if (deleted.length > 0) {
+        lines.push(`${prefix}Deleted ${deleted.length} items:`);
+        for (const f of deleted) {
+          lines.push(`  - ${f}`);
+        }
+      } else {
+        lines.push(`${prefix}No items older than ${olderThanDays} days to delete.`);
+      }
+      
+      if (kept.length > 0) {
+        lines.push(`\nKept ${kept.length} items (less than ${olderThanDays} days old)`);
+      }
+      
+      if (errors.length > 0) {
+        lines.push(`\nErrors:`);
+        for (const e of errors) {
+          lines.push(`  - ${e}`);
+        }
+      }
+      
+      return lines.join('\n');
+    }
+
+    case "clear": {
+      const items = listCompletedItems();
+      const deleted: string[] = [];
+      const errors: string[] = [];
+      
+      for (const item of items) {
+        if (dryRun) {
+          deleted.push(`${item.filename} (${item.ageDays} days old) [dry-run]`);
+        } else {
+          try {
+            unlinkSync(item.filepath);
+            deleted.push(`${item.filename} (${item.ageDays} days old)`);
+          } catch (error: any) {
+            errors.push(`Failed to delete ${item.filename}: ${error.message}`);
+          }
+        }
+      }
+      
+      const lines: string[] = [];
+      const prefix = dryRun ? "[DRY-RUN] " : "";
+      
+      if (deleted.length > 0) {
+        lines.push(`${prefix}Cleared ${deleted.length} completed items:`);
+        for (const f of deleted) {
+          lines.push(`  - ${f}`);
+        }
+      } else {
+        lines.push(`${prefix}No completed items to clear.`);
+      }
+      
+      if (errors.length > 0) {
+        lines.push(`\nErrors:`);
+        for (const e of errors) {
+          lines.push(`  - ${e}`);
+        }
+      }
+      
+      return lines.join('\n');
+    }
+
+    default:
+      throw new Error(`Unknown action: ${action}`);
+  }
+}
+
 // Backlog Todo Done Handler
 async function handleBacklogTodoDone(args: any) {
   const { action, topic, todoId, status, batch } = args;
@@ -508,6 +659,7 @@ Backlog Management:
   • read          - List backlog items or fetch single item with full content
   • write         - Create, amend, submit, approve, reopen, or wontfix items
   • done          - Mark items complete with optional summary
+  • prune         - Remove old completed items from archive
 
 Ticket Management:
   • ticket-read   - List and filter tickets for a backlog item
@@ -552,6 +704,7 @@ IMPLEMENTATION STATUS:
   ✓ Legacy format migration support
   ✓ Completion summaries
   ✓ Age tracking and staleness detection
+  ✓ Prune/clear completed items
 
 WORKFLOW:
   1. Create backlog item (write action=create)
@@ -815,6 +968,28 @@ async function main() {
             required: ["action", "topic"],
           },
         },
+        {
+          name: "prune",
+          description: "Prune completed/done backlog items - remove old archived items from COMPLETED_Backlog",
+          inputSchema: {
+            type: "object",
+            properties: {
+              action: {
+                type: "string",
+                enum: ["prune", "clear", "list"],
+                description: "Operation: prune (by age), clear (all), or list completed items (default: list)",
+              },
+              olderThanDays: {
+                type: "number",
+                description: "For prune action: delete items older than this many days (default: 30)",
+              },
+              dryRun: {
+                type: "boolean",
+                description: "Preview what would be deleted without actually deleting (default: false)",
+              },
+            },
+          },
+        },
       ],
     };
   });
@@ -844,6 +1019,9 @@ async function main() {
           break;
         case "ticket-done":
           result = await handleBacklogTodoDone(request.params.arguments);
+          break;
+        case "prune":
+          result = await handleBacklogPrune(request.params.arguments);
           break;
         default:
           throw new Error(`Unknown tool: ${request.params.name}`);

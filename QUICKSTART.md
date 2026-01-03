@@ -150,6 +150,28 @@ Then configure:
 }
 ```
 
+### Prune Old Completed Items
+
+```json
+{
+  "tool": "prune",
+  "arguments": {
+    "action": "list"
+  }
+}
+```
+
+```json
+{
+  "tool": "prune",
+  "arguments": {
+    "action": "prune",
+    "olderThanDays": 30,
+    "dryRun": true
+  }
+}
+```
+
 ## Workflow
 
 1. **Create** → Item starts in "new" status

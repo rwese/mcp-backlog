@@ -10,6 +10,7 @@ A Model Context Protocol (MCP) server for managing backlog items and todos. This
 - **Priority Levels**: Organize items by high, medium, or low priority
 - **Versioning**: Automatic versioning when amending backlog items
 - **Markdown Storage**: Human-readable markdown files with frontmatter
+- **Prune/Clear**: Remove old completed items to keep your archive clean
 
 ## Installation
 
@@ -213,6 +214,44 @@ Mark todos as complete with dependency validation.
 - `action`: done or list
 - `topic`: Backlog item topic (required)
 - `todoId`: Todo ID to mark as done
+
+### prune
+
+Remove old completed/archived backlog items from COMPLETED_Backlog.
+
+**Arguments:**
+
+- `action`: Operation to perform (list, prune, clear) - default: list
+- `olderThanDays` (optional): For prune action, delete items older than this many days (default: 30)
+- `dryRun` (optional): Preview what would be deleted without actually deleting (default: false)
+
+**Examples:**
+
+```javascript
+// List all completed items with their age
+{
+  "action": "list"
+}
+
+// Preview what would be deleted (items older than 7 days)
+{
+  "action": "prune",
+  "olderThanDays": 7,
+  "dryRun": true
+}
+
+// Actually delete items older than 30 days
+{
+  "action": "prune",
+  "olderThanDays": 30
+}
+
+// Clear all completed items (with preview first)
+{
+  "action": "clear",
+  "dryRun": true
+}
+```
 
 ## Directory Structure
 

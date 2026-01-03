@@ -126,6 +126,7 @@ describe("MCP Server Integration Tests", () => {
     expect(toolNames).toContain("ticket-read");
     expect(toolNames).toContain("ticket-write");
     expect(toolNames).toContain("ticket-done");
+    expect(toolNames).toContain("prune");
   });
 
   it("should execute backlog-read (list) without errors", async () => {
@@ -431,5 +432,192 @@ describe("MCP Server Integration Tests", () => {
     const content = response.result.content[0].text;
     expect(content).toContain("List Test 1");
     expect(content).toContain("List Test 2");
+  });
+
+  it("should list completed items with prune tool", async () => {
+    const request = {
+      jsonrpc: "2.0",
+      id: 18,
+      method: "tools/call",
+      params: {
+        name: "prune",
+        arguments: {
+          action: "list",
+        },
+      },
+    };
+
+    const response = await sendMCPRequest(request);
+    
+    expect(response.result).toBeDefined();
+    expect(response.result.isError).not.toBe(true);
+    // Should either show "No completed" or list items
+    const content = response.result.content[0].text;
+    expect(content).toMatch(/completed|Completed/i);
+  });
+
+  it("should support prune dry-run mode", async () => {
+    const request = {
+      jsonrpc: "2.0",
+      id: 19,
+      method: "tools/call",
+      params: {
+        name: "prune",
+        arguments: {
+          action: "prune",
+          olderThanDays: 0,
+          dryRun: true,
+        },
+      },
+    };
+
+    const response = await sendMCPRequest(request);
+    
+    expect(response.result).toBeDefined();
+    expect(response.result.isError).not.toBe(true);
+    const content = response.result.content[0].text;
+    // Should indicate dry-run mode
+    expect(content).toMatch(/DRY-RUN|No items older than/i);
+  });
+
+  it("should support clear dry-run mode", async () => {
+    const request = {
+      jsonrpc: "2.0",
+      id: 20,
+      method: "tools/call",
+      params: {
+        name: "prune",
+        arguments: {
+          action: "clear",
+          dryRun: true,
+        },
+      },
+    };
+
+    const response = await sendMCPRequest(request);
+    
+    expect(response.result).toBeDefined();
+    expect(response.result.isError).not.toBe(true);
+    const content = response.result.content[0].text;
+    // Should indicate dry-run mode or no items
+    expect(content).toMatch(/DRY-RUN|No completed items/i);
+  });
+
+  it("should complete item and then list in prune", async () => {
+    // Create a backlog item
+    await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 21,
+      method: "tools/call",
+      params: {
+        name: "write",
+        arguments: {
+          action: "create",
+          topic: "Prune Test Item",
+          description: "Item for testing prune functionality",
+        },
+      },
+    });
+
+    // Submit it (new -> ready)
+    await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 22,
+      method: "tools/call",
+      params: {
+        name: "write",
+        arguments: {
+          action: "submit",
+          topic: "Prune Test Item",
+        },
+      },
+    });
+
+    // Move to review (ready -> review)
+    await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 23,
+      method: "tools/call",
+      params: {
+        name: "write",
+        arguments: {
+          action: "amend",
+          topic: "Prune Test Item",
+          status: "review",
+        },
+      },
+    });
+
+    // Approve it (review -> done)
+    await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 24,
+      method: "tools/call",
+      params: {
+        name: "write",
+        arguments: {
+          action: "approve",
+          topic: "Prune Test Item",
+        },
+      },
+    });
+
+    // Mark it as done (archive it)
+    const doneResponse = await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 25,
+      method: "tools/call",
+      params: {
+        name: "done",
+        arguments: {
+          action: "done",
+          topic: "Prune Test Item",
+          summary: "Completed for prune test",
+        },
+      },
+    });
+
+    expect(doneResponse.result.isError).not.toBe(true);
+
+    // List completed items
+    const listResponse = await sendMCPRequest({
+      jsonrpc: "2.0",
+      id: 26,
+      method: "tools/call",
+      params: {
+        name: "prune",
+        arguments: {
+          action: "list",
+        },
+      },
+    });
+
+    expect(listResponse.result.isError).not.toBe(true);
+    const content = listResponse.result.content[0].text;
+    expect(content).toContain("prune-test-item");
+  });
+
+  it("should handle prune with custom olderThanDays", async () => {
+    const request = {
+      jsonrpc: "2.0",
+      id: 27,
+      method: "tools/call",
+      params: {
+        name: "prune",
+        arguments: {
+          action: "prune",
+          olderThanDays: 365,
+          dryRun: true,
+        },
+      },
+    };
+
+    const response = await sendMCPRequest(request);
+    
+    expect(response.result).toBeDefined();
+    expect(response.result.isError).not.toBe(true);
+    // With 365 days, recently created items should be kept
+    const content = response.result.content[0].text;
+    expect(content).toMatch(/No items older than 365|Kept/i);
   });
 });
